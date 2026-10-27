@@ -1,0 +1,14 @@
+.btn-secondary {
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg);
+}
+
+.total-row {
+  background: var(--bg);
+  font-weight: 600;
+}

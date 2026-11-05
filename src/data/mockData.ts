@@ -1,21 +1,26 @@
+/**
+ * Catálogo estático y semillas de DEMO.
+ * Todos los pacientes son ficticios (prefijo DEMO / RUT 00.000.00X-X).
+ * No contiene datos reales de pacientes ni exportaciones AVIS.
+ */
 import { Centro, Cita, MotivoLlamada, LlamadaEntrante, Usuario, Paciente } from './types';
 
 export const centros: Centro[] = [
-  { id: 'c1', nombre: 'CESFAM Centro', codigo: 'CSC' },
-  { id: 'c2', nombre: 'CESFAM Norte', codigo: 'CSN' },
-  { id: 'c3', nombre: 'CESFAM Sur', codigo: 'CSS' },
-  { id: 'c4', nombre: 'CESFAM Oriente', codigo: 'CSO' },
-  { id: 'c5', nombre: 'CESFAM Poniente', codigo: 'CSP' },
-  { id: 'c6', nombre: 'CESFAM La Rosa', codigo: 'CSLR' },
-  { id: 'c7', nombre: 'CESFAM Cachapoal', codigo: 'CSCA' },
+  { id: 'c1', nombre: 'CESFAM Centro (demo)', codigo: 'CSC' },
+  { id: 'c2', nombre: 'CESFAM Norte (demo)', codigo: 'CSN' },
+  { id: 'c3', nombre: 'CESFAM Sur (demo)', codigo: 'CSS' },
+  { id: 'c4', nombre: 'CESFAM Oriente (demo)', codigo: 'CSO' },
+  { id: 'c5', nombre: 'CESFAM Poniente (demo)', codigo: 'CSP' },
+  { id: 'c6', nombre: 'CESFAM La Rosa (demo)', codigo: 'CSLR' },
+  { id: 'c7', nombre: 'CESFAM Cachapoal (demo)', codigo: 'CSCA' },
 ];
 
 export const usuarios: Usuario[] = [
-  { id: 'u1', nombre: 'María', apellido: 'González', rol: 'administrador', activo: true },
-  { id: 'u2', nombre: 'Patricia', apellido: 'Muñoz', rol: 'encargado', activo: true },
-  { id: 'u3', nombre: 'Carolina', apellido: 'Soto', rol: 'funcionaria', centroId: 'c1', activo: true },
-  { id: 'u4', nombre: 'Daniela', apellido: 'Rojas', rol: 'funcionaria', centroId: 'c2', activo: true },
-  { id: 'u5', nombre: 'Andrea', apellido: 'Vera', rol: 'funcionaria', centroId: 'c3', activo: true },
+  { id: 'u1', nombre: 'Ada', apellido: 'Admin', rol: 'administrador', activo: true },
+  { id: 'u2', nombre: 'Elena', apellido: 'Encargada', rol: 'encargado', activo: true },
+  { id: 'u3', nombre: 'Fiona', apellido: 'Funcionaria', rol: 'funcionaria', centroId: 'c1', activo: true },
+  { id: 'u4', nombre: 'Nora', apellido: 'Norte', rol: 'funcionaria', centroId: 'c2', activo: true },
+  { id: 'u5', nombre: 'Sara', apellido: 'Sur', rol: 'funcionaria', centroId: 'c3', activo: true },
 ];
 
 export const motivosLlamada: MotivoLlamada[] = [
@@ -28,64 +33,156 @@ export const motivosLlamada: MotivoLlamada[] = [
   { id: 'm7', codigo: 'OTROS', descripcion: 'Otros', activo: true },
 ];
 
-const generarPaciente = (rut: string, nombre: string, apellidoP: string, apellidoM: string, edad: number, sexo: 'M'|'F'): Paciente => ({
+const paciente = (
+  rut: string,
+  nombre: string,
+  apellidoP: string,
+  apellidoM: string,
+  edad: number,
+  sexo: 'M' | 'F',
+  telefono: string
+): Paciente => ({
   rut,
   nombre,
   apellidoPaterno: apellidoP,
   apellidoMaterno: apellidoM,
-  telefono: `+569${Math.floor(10000000 + Math.random() * 90000000)}`,
+  telefono,
   edad,
   sexo,
 });
 
-export const citasMock: Cita[] = [
+/** Semilla inicial de citas (claramente ficticias). */
+export const citasSeed: Cita[] = [
   {
-    id: 'ct1', centroId: 'c1', centroNombre: 'CESFAM Centro',
-    paciente: generarPaciente('12345678-9', 'Juan', 'Pérez', 'López', 68, 'M'),
-    fecha: '2026-10-28', hora: '09:00', profesional: 'Dra. Martínez', prestacion: 'Control Crónico', tipo: 'cronico',
-    estadoConfirmacion: 'sin_enviar'
+    id: 'ct1',
+    centroId: 'c1',
+    centroNombre: 'CESFAM Centro (demo)',
+    paciente: paciente('00.000.001-9', 'Demo', 'Alfa', 'Uno', 68, 'M', '+56900000001'),
+    fecha: '2026-11-12',
+    hora: '09:00',
+    profesional: 'Dra. Demo Norte',
+    prestacion: 'Control Crónico',
+    tipo: 'cronico',
+    estadoConfirmacion: 'sin_enviar',
   },
   {
-    id: 'ct2', centroId: 'c1', centroNombre: 'CESFAM Centro',
-    paciente: generarPaciente('98765432-1', 'María', 'González', 'Silva', 45, 'F'),
-    fecha: '2026-10-28', hora: '09:30', profesional: 'Dr. Torres', prestacion: 'Control DM2', tipo: 'cronico',
-    estadoConfirmacion: 'sin_enviar'
+    id: 'ct2',
+    centroId: 'c1',
+    centroNombre: 'CESFAM Centro (demo)',
+    paciente: paciente('00.000.002-7', 'Demo', 'Beta', 'Dos', 45, 'F', '+56900000002'),
+    fecha: '2026-11-12',
+    hora: '09:30',
+    profesional: 'Dr. Demo Sur',
+    prestacion: 'Control DM2',
+    tipo: 'cronico',
+    estadoConfirmacion: 'sin_enviar',
   },
   {
-    id: 'ct3', centroId: 'c1', centroNombre: 'CESFAM Centro',
-    paciente: generarPaciente('11223344-5', 'Pedro', 'Ramírez', 'Castro', 32, 'M'),
-    fecha: '2026-10-28', hora: '10:00', profesional: 'Enf. Contreras', prestacion: 'Curación', tipo: 'morbilidad',
-    estadoConfirmacion: 'sin_enviar'
+    id: 'ct3',
+    centroId: 'c1',
+    centroNombre: 'CESFAM Centro (demo)',
+    paciente: paciente('00.000.003-5', 'Demo', 'Gamma', 'Tres', 32, 'M', '+56900000003'),
+    fecha: '2026-11-12',
+    hora: '10:00',
+    profesional: 'Enf. Demo Este',
+    prestacion: 'Curación',
+    tipo: 'morbilidad',
+    estadoConfirmacion: 'sin_enviar',
   },
   {
-    id: 'ct4', centroId: 'c1', centroNombre: 'CESFAM Centro',
-    paciente: generarPaciente('55667788-0', 'Rosa', 'Muñoz', 'Vega', 72, 'F'),
-    fecha: '2026-10-28', hora: '10:30', profesional: 'Dra. Martínez', prestacion: 'Control HTA', tipo: 'cronico',
-    estadoConfirmacion: 'enviado', fechaEnvio: '2026-10-27T14:30:00'
+    id: 'ct4',
+    centroId: 'c1',
+    centroNombre: 'CESFAM Centro (demo)',
+    paciente: paciente('00.000.004-3', 'Demo', 'Delta', 'Cuatro', 72, 'F', '+56900000004'),
+    fecha: '2026-11-12',
+    hora: '10:30',
+    profesional: 'Dra. Demo Norte',
+    prestacion: 'Control HTA',
+    tipo: 'cronico',
+    estadoConfirmacion: 'enviado',
+    fechaEnvio: '2026-11-11T14:30:00',
   },
   {
-    id: 'ct5', centroId: 'c1', centroNombre: 'CESFAM Centro',
-    paciente: generarPaciente('99887766-4', 'Luis', 'Fernández', 'Ortiz', 58, 'M'),
-    fecha: '2026-10-28', hora: '11:00', profesional: 'Dr. Torres', prestacion: 'Control Crónico', tipo: 'cronico',
-    estadoConfirmacion: 'confirmado', fechaEnvio: '2026-10-27T14:30:00', fechaRespuesta: '2026-10-27T15:12:00', formaContacto: 'whatsapp'
+    id: 'ct5',
+    centroId: 'c1',
+    centroNombre: 'CESFAM Centro (demo)',
+    paciente: paciente('00.000.005-1', 'Demo', 'Epsilon', 'Cinco', 58, 'M', '+56900000005'),
+    fecha: '2026-11-12',
+    hora: '11:00',
+    profesional: 'Dr. Demo Sur',
+    prestacion: 'Control Crónico',
+    tipo: 'cronico',
+    estadoConfirmacion: 'confirmado',
+    fechaEnvio: '2026-11-11T14:30:00',
+    fechaRespuesta: '2026-11-11T15:12:00',
+    formaContacto: 'whatsapp',
   },
   {
-    id: 'ct6', centroId: 'c1', centroNombre: 'CESFAM Centro',
-    paciente: generarPaciente('44556677-3', 'Ana', 'Soto', 'Herrera', 66, 'F'),
-    fecha: '2026-10-28', hora: '11:30', profesional: 'Dra. Martínez', prestacion: 'Control DM2', tipo: 'cronico',
-    estadoConfirmacion: 'sin_respuesta', fechaEnvio: '2026-10-27T14:30:00'
+    id: 'ct6',
+    centroId: 'c1',
+    centroNombre: 'CESFAM Centro (demo)',
+    paciente: paciente('00.000.006-K', 'Demo', 'Zeta', 'Seis', 66, 'F', '+56900000006'),
+    fecha: '2026-11-12',
+    hora: '11:30',
+    profesional: 'Dra. Demo Norte',
+    prestacion: 'Control DM2',
+    tipo: 'cronico',
+    estadoConfirmacion: 'sin_respuesta',
+    fechaEnvio: '2026-11-11T14:30:00',
+  },
+  {
+    id: 'ct7',
+    centroId: 'c2',
+    centroNombre: 'CESFAM Norte (demo)',
+    paciente: paciente('00.000.007-8', 'Demo', 'Eta', 'Siete', 55, 'F', '+56900000007'),
+    fecha: '2026-11-13',
+    hora: '08:30',
+    profesional: 'Dr. Demo Oeste',
+    prestacion: 'Control Crónico',
+    tipo: 'cronico',
+    estadoConfirmacion: 'sin_respuesta',
+    fechaEnvio: '2026-11-11T16:00:00',
+  },
+  {
+    id: 'ct8',
+    centroId: 'c2',
+    centroNombre: 'CESFAM Norte (demo)',
+    paciente: paciente('00.000.008-6', 'Demo', 'Theta', 'Ocho', 41, 'M', '+56900000008'),
+    fecha: '2026-11-13',
+    hora: '09:00',
+    profesional: 'Dra. Demo Norte',
+    prestacion: 'Control HTA',
+    tipo: 'cronico',
+    estadoConfirmacion: 'enviado',
+    fechaEnvio: '2026-11-11T16:00:00',
   },
 ];
 
-export const llamadasEntrantesMock: LlamadaEntrante[] = [
+export const llamadasSeed: LlamadaEntrante[] = [
   {
-    id: 'll1', fecha: '2026-10-27', hora: '09:15', centroId: 'c1', centroNombre: 'CESFAM Centro',
-    paciente: generarPaciente('11112222-3', 'José', 'Valdés', 'Molina', 54, 'M'),
-    motivoId: 'm1', motivoDescripcion: 'Solicitud de hora', atendidoPor: 'Carolina Soto'
+    id: 'll1',
+    fecha: '2026-11-11',
+    hora: '09:15',
+    centroId: 'c1',
+    centroNombre: 'CESFAM Centro (demo)',
+    paciente: paciente('00.000.101-1', 'Demo', 'Iota', 'Nueve', 54, 'M', '+56900000101'),
+    motivoId: 'm1',
+    motivoDescripcion: 'Solicitud de hora',
+    atendidoPor: 'Fiona Funcionaria',
   },
   {
-    id: 'll2', fecha: '2026-10-27', hora: '10:42', centroId: 'c2', centroNombre: 'CESFAM Norte',
-    paciente: generarPaciente('33334444-5', 'Carmen', 'Araya', 'Fuentes', 61, 'F'),
-    motivoId: 'm6', motivoDescripcion: 'Solicitud de certificado', atendidoPor: 'Daniela Rojas'
+    id: 'll2',
+    fecha: '2026-11-11',
+    hora: '10:42',
+    centroId: 'c2',
+    centroNombre: 'CESFAM Norte (demo)',
+    paciente: paciente('00.000.102-K', 'Demo', 'Kappa', 'Diez', 61, 'F', '+56900000102'),
+    motivoId: 'm6',
+    motivoDescripcion: 'Solicitud de certificado',
+    atendidoPor: 'Nora Norte',
   },
 ];
+
+/** Compatibilidad con imports previos */
+export const citasMock = citasSeed;
+export const llamadasEntrantesMock = llamadasSeed;

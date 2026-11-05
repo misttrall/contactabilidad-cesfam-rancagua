@@ -1,5 +1,12 @@
 export type Rol = 'funcionaria' | 'encargado' | 'administrador';
 
+export type EstadoConfirmacion =
+  | 'sin_enviar'
+  | 'enviado'
+  | 'confirmado'
+  | 'cancelado'
+  | 'sin_respuesta';
+
 export type Centro = {
   id: string;
   nombre: string;
@@ -27,7 +34,7 @@ export type Cita = {
   profesional: string;
   prestacion: string;
   tipo: 'cronico' | 'morbilidad';
-  estadoConfirmacion: 'sin_enviar' | 'enviado' | 'confirmado' | 'cancelado' | 'sin_respuesta';
+  estadoConfirmacion: EstadoConfirmacion;
   fechaEnvio?: string;
   fechaRespuesta?: string;
   fechaLlamado?: string;

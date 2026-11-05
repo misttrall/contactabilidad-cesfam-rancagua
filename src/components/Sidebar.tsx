@@ -1,15 +1,16 @@
 import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Upload, 
-  Send, 
-  PhoneCall, 
-  PhoneIncoming, 
-  FileText, 
-  BarChart3, 
+import {
+  LayoutDashboard,
+  Upload,
+  Send,
+  PhoneCall,
+  PhoneIncoming,
+  FileText,
+  BarChart3,
   Settings,
-  Heart
+  Hexagon,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 interface SidebarProps {
@@ -17,25 +18,27 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ open }: SidebarProps) => {
+  const { canAccess } = useAuth();
+
   const menuItems = [
     { path: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/carga-citas', icon: Upload, label: 'Cargar Citas AVIS' },
+    { path: '/carga-citas', icon: Upload, label: 'Cargar Citas' },
     { path: '/confirmacion-masiva', icon: Send, label: 'Confirmación Masiva' },
     { path: '/pendientes', icon: PhoneCall, label: 'Pendientes por Llamar' },
     { path: '/llamada-entrante', icon: PhoneIncoming, label: 'Llamada Entrante' },
     { path: '/historial', icon: FileText, label: 'Historial Llamadas' },
     { path: '/reportes', icon: BarChart3, label: 'Reportes' },
     { path: '/configuracion', icon: Settings, label: 'Configuración' },
-  ];
+  ].filter((item) => canAccess(item.path));
 
   return (
     <aside className={`sidebar ${open ? 'open' : 'closed'}`}>
       <div className="sidebar-header">
         <div className="sidebar-logo">
-          <Heart size={24} />
-          <span>BusinessHub</span>
+          <Hexagon size={24} />
+          <span>Fluxor</span>
         </div>
-        <div className="sidebar-subtitle">Contactabilidad</div>
+        <div className="sidebar-subtitle">Contactabilidad · Demo</div>
       </div>
       <nav className="sidebar-nav">
         {menuItems.map((item) => (
@@ -50,6 +53,9 @@ const Sidebar = ({ open }: SidebarProps) => {
           </NavLink>
         ))}
       </nav>
+      <div className="sidebar-footer">
+        <span>Fluxor SpA</span>
+      </div>
     </aside>
   );
 };

@@ -1,5 +1,8 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { DataProvider } from './context/DataContext';
 import Layout from './components/Layout';
+import DemoBanner from './components/DemoBanner';
 import Dashboard from './pages/Dashboard';
 import CargaCitas from './pages/CargaCitas';
 import ConfirmacionMasiva from './pages/ConfirmacionMasiva';
@@ -10,28 +13,110 @@ import Reportes from './pages/Reportes';
 import Configuracion from './pages/Configuracion';
 import Login from './pages/Login';
 
-function App() {
-  const isAuthenticated = true;
+function ProtectedRoute({ children, path }: { children: React.ReactNode; path: string }) {
+  const { canAccess } = useAuth();
+  if (!canAccess(path)) {
+    return <Navigate to="/" replace />;
+  }
+  return <>{children}</>;
+}
 
-  if (!isAuthenticated) {
-    return <Login />;
+function AppRoutes() {
+  const { ready, session } = useAuth();
+  const location = useLocation();
+
+  if (!ready) {
+    return (
+      <div className="login-container" style={{ minHeight: '100vh' }}>
+        <DemoBanner />
+        <p style={{ color: 'white', marginTop: 48 }}>Cargando demo…</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return (
+      <>
+        <DemoBanner />
+        <Login />
+      </>
+    );
   }
 
   return (
+    <Routes location={location}>
+      <Route path="/" element={<Layout />}>
+        <Route index element={<Dashboard />} />
+        <Route
+          path="carga-citas"
+          element={
+            <ProtectedRoute path="/carga-citas">
+              <CargaCitas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="confirmacion-masiva"
+          element={
+            <ProtectedRoute path="/confirmacion-masiva">
+              <ConfirmacionMasiva />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="pendientes"
+          element={
+            <ProtectedRoute path="/pendientes">
+              <PendientesLlamar />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="llamada-entrante"
+          element={
+            <ProtectedRoute path="/llamada-entrante">
+              <LlamadaEntrante />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="historial"
+          element={
+            <ProtectedRoute path="/historial">
+              <HistorialLlamadas />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="reportes"
+          element={
+            <ProtectedRoute path="/reportes">
+              <Reportes />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="configuracion"
+          element={
+            <ProtectedRoute path="/configuracion">
+              <Configuracion />
+            </ProtectedRoute>
+          }
+        />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+function App() {
+  return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Dashboard />} />
-          <Route path="carga-citas" element={<CargaCitas />} />
-          <Route path="confirmacion-masiva" element={<ConfirmacionMasiva />} />
-          <Route path="pendientes" element={<PendientesLlamar />} />
-          <Route path="llamada-entrante" element={<LlamadaEntrante />} />
-          <Route path="historial" element={<HistorialLlamadas />} />
-          <Route path="reportes" element={<Reportes />} />
-          <Route path="configuracion" element={<Configuracion />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <AuthProvider>
+        <DataProvider>
+          <AppRoutes />
+        </DataProvider>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

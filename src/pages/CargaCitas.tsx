@@ -1,51 +1,82 @@
 import { useState } from 'react';
-import { Upload, FileSpreadsheet, Filter, CheckCircle } from 'lucide-react';
+import { Upload, FileSpreadsheet, Filter, CheckCircle, Download, AlertTriangle } from 'lucide-react';
 import { centros } from '../data/mockData';
+import { parseCitasExcel } from '../lib/excel';
+import { useData } from '../context/DataContext';
+import type { Cita } from '../data/types';
 import './CargaCitas.css';
 
 const CargaCitas = () => {
+  const { addCitas } = useData();
   const [archivo, setArchivo] = useState<File | null>(null);
-  const [centroSeleccionado, setCentroSeleccionado] = useState('');
+  const [centroSeleccionado, setCentroSeleccionado] = useState('c1');
   const [excluirMorbilidad, setExcluirMorbilidad] = useState(true);
-  const [cargado, setCargado] = useState(false);
+  const [cargando, setCargando] = useState(false);
+  const [errores, setErrores] = useState<string[]>([]);
+  const [resultado, setResultado] = useState<{
+    citas: Cita[];
+    excluidasMorbilidad: number;
+  } | null>(null);
 
   const handleArchivo = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setResultado(null);
+    setErrores([]);
     if (e.target.files && e.target.files[0]) {
       setArchivo(e.target.files[0]);
     }
   };
 
-  const handleCargar = () => {
-    if (archivo && centroSeleccionado) {
-      setCargado(true);
+  const handleCargar = async () => {
+    if (!archivo || !centroSeleccionado) return;
+    const centro = centros.find((c) => c.id === centroSeleccionado);
+    if (!centro) return;
+
+    setCargando(true);
+    setErrores([]);
+    setResultado(null);
+    try {
+      const parsed = await parseCitasExcel(archivo, centro, excluirMorbilidad);
+      if (!parsed.ok) {
+        setErrores(parsed.errores);
+        return;
+      }
+      await addCitas(parsed.citas);
+      setResultado({ citas: parsed.citas, excluidasMorbilidad: parsed.excluidasMorbilidad });
+    } catch (err) {
+      setErrores([`No se pudo leer el archivo: ${err instanceof Error ? err.message : String(err)}`]);
+    } finally {
+      setCargando(false);
     }
   };
 
   return (
     <div className="page">
       <div className="page-header">
-        <h1>Cargar Citas desde AVIS</h1>
-        <p>Exportar desde AVIS (Excel/PDF) y cargar al sistema</p>
+        <h1>Cargar Citas (plantilla demo)</h1>
+        <p>Parseo real de Excel con datos ficticios. No uses exportaciones AVIS reales.</p>
       </div>
 
       <div className="grid-2">
         <div className="card">
           <div className="card-header">
-            <h2><Upload size={18} /> Carga de Archivo</h2>
+            <h2>
+              <Upload size={18} /> Carga de Archivo
+            </h2>
           </div>
           <div className="card-body">
             <div className="form-group">
               <label>Centro</label>
               <select value={centroSeleccionado} onChange={(e) => setCentroSeleccionado(e.target.value)}>
-                <option value="">Seleccione centro...</option>
                 {centros.map((c) => (
-                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                  <option key={c.id} value={c.id}>
+                    {c.nombre}
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className="form-group">
-              <label>Archivo Excel (.XLSX, .XLS)</label>
+              <label>Archivo Excel (.xlsx)</label>
               <div className="file-upload">
                 <input type="file" accept=".xlsx,.xls" onChange={handleArchivo} id="file" />
                 <label htmlFor="file" className="file-label">
@@ -55,49 +86,80 @@ const CargaCitas = () => {
               </div>
             </div>
 
-            <div className="checkbox-group">
+            <div className="checkbox-group" style={{ marginBottom: 16 }}>
               <label>
-                <input 
-                  type="checkbox" 
-                  checked={excluirMorbilidad} 
+                <input
+                  type="checkbox"
+                  checked={excluirMorbilidad}
                   onChange={(e) => setExcluirMorbilidad(e.target.checked)}
                 />
                 <span>Excluir morbilidad (solo controles crónicos)</span>
               </label>
             </div>
 
-            <button 
-              className="btn btn-primary" 
-              onClick={handleCargar}
-              disabled={!archivo || !centroSeleccionado}
-            >
-              <Upload size={18} />
-              Cargar Citas
-            </button>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                className="btn btn-primary"
+                onClick={() => void handleCargar()}
+                disabled={!archivo || !centroSeleccionado || cargando}
+              >
+                <Upload size={18} />
+                {cargando ? 'Procesando…' : 'Cargar Citas'}
+              </button>
+              <a className="btn btn-secondary" href="/plantilla-citas-demo.xlsx" download>
+                <Download size={18} />
+                Descargar plantilla
+              </a>
+            </div>
           </div>
         </div>
 
         <div className="card">
           <div className="card-header">
-            <h2><Filter size={18} /> Información</h2>
+            <h2>
+              <Filter size={18} /> Información
+            </h2>
           </div>
           <div className="card-body">
             <div className="info-box">
-              <h3>Instrucciones</h3>
+              <h3>Columnas obligatorias</h3>
               <ul>
-                <li>Exportar listado de citas desde AVIS en formato Excel</li>
-                <li>Seleccionar el centro correspondiente</li>
-                <li>Se recomienda excluir morbilidad (se confirma principalmente controles crónicos con 1 mes o más de anticipación)</li>
-                <li>Los datos se cargarán con: Paciente, RUT, Teléfono, Fecha, Hora, Profesional, Prestación, Tipo</li>
+                <li>RUT, Nombre, ApellidoPaterno, ApellidoMaterno</li>
+                <li>Telefono, Edad, Sexo (M/F)</li>
+                <li>Fecha, Hora, Profesional, Prestacion</li>
+                <li>Tipo: <code>cronico</code> o <code>morbilidad</code></li>
               </ul>
+              <p style={{ marginTop: 12, fontSize: 13, color: 'var(--text-secondary)' }}>
+                Solo datos ficticios. Está prohibido subir exportaciones reales de AVIS
+                (Ley 19.628 / 20.584).
+              </p>
             </div>
 
-            {cargado && (
-              <div className="success-box">
+            {errores.length > 0 && (
+              <div className="alert alert-danger" style={{ marginTop: 16, flexDirection: 'column', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <AlertTriangle size={18} />
+                  <strong>Error al cargar</strong>
+                </div>
+                <ul style={{ margin: '8px 0 0 24px' }}>
+                  {errores.map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {resultado && (
+              <div className="success-box" style={{ marginTop: 16 }}>
                 <CheckCircle size={24} />
                 <div>
                   <strong>Carga exitosa</strong>
-                  <p>Se cargaron 15 citas. 12 crónicas, 3 morbilidad excluidas.</p>
+                  <p>
+                    Se cargaron {resultado.citas.length} citas
+                    {resultado.excluidasMorbilidad > 0
+                      ? `. ${resultado.excluidasMorbilidad} morbilidad excluidas.`
+                      : '.'}
+                  </p>
                 </div>
               </div>
             )}
@@ -105,10 +167,10 @@ const CargaCitas = () => {
         </div>
       </div>
 
-      {cargado && (
+      {resultado && (
         <div className="card">
           <div className="card-header">
-            <h2>Vista Previa - Citas Cargadas</h2>
+            <h2>Vista previa — citas cargadas</h2>
           </div>
           <div className="table-container">
             <table>
@@ -125,36 +187,24 @@ const CargaCitas = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>12.345.678-9</td>
-                  <td>Juan Pérez López</td>
-                  <td>+56912345678</td>
-                  <td>28-10-2026</td>
-                  <td>09:00</td>
-                  <td>Dra. Martínez</td>
-                  <td>Control Crónico</td>
-                  <td><span className="badge badge-info">Crónico</span></td>
-                </tr>
-                <tr>
-                  <td>98.765.432-1</td>
-                  <td>María González Silva</td>
-                  <td>+56987654321</td>
-                  <td>28-10-2026</td>
-                  <td>09:30</td>
-                  <td>Dr. Torres</td>
-                  <td>Control DM2</td>
-                  <td><span className="badge badge-info">Crónico</span></td>
-                </tr>
-                <tr>
-                  <td>55.667.788-0</td>
-                  <td>Rosa Muñoz Vega</td>
-                  <td>+56955667788</td>
-                  <td>28-10-2026</td>
-                  <td>10:30</td>
-                  <td>Dra. Martínez</td>
-                  <td>Control HTA</td>
-                  <td><span className="badge badge-info">Crónico</span></td>
-                </tr>
+                {resultado.citas.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.paciente.rut}</td>
+                    <td>
+                      {c.paciente.nombre} {c.paciente.apellidoPaterno} {c.paciente.apellidoMaterno}
+                    </td>
+                    <td>{c.paciente.telefono}</td>
+                    <td>{c.fecha}</td>
+                    <td>{c.hora}</td>
+                    <td>{c.profesional}</td>
+                    <td>{c.prestacion}</td>
+                    <td>
+                      <span className={`badge ${c.tipo === 'cronico' ? 'badge-info' : 'badge-warning'}`}>
+                        {c.tipo === 'cronico' ? 'Crónico' : 'Morbilidad'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>

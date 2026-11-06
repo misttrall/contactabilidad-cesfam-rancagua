@@ -1,18 +1,22 @@
 import { FileText, Calendar, User, Phone } from 'lucide-react';
-import { llamadasEntrantesMock } from '../data/mockData';
+import { useData } from '../context/DataContext';
 import './HistorialLlamadas.css';
 
 const HistorialLlamadas = () => {
+  const { llamadas } = useData();
+
   return (
     <div className="page">
       <div className="page-header">
         <h1>Historial de Llamadas Entrantes</h1>
-        <p>Registro completo de llamadas atendidas</p>
+        <p>Registro persistido en IndexedDB (datos ficticios)</p>
       </div>
 
       <div className="card">
         <div className="card-header">
-          <h2><FileText size={18} /> Historial</h2>
+          <h2>
+            <FileText size={18} /> Historial ({llamadas.length})
+          </h2>
         </div>
         <div className="table-container">
           <table>
@@ -29,7 +33,7 @@ const HistorialLlamadas = () => {
               </tr>
             </thead>
             <tbody>
-              {llamadasEntrantesMock.map((llamada) => (
+              {llamadas.map((llamada) => (
                 <tr key={llamada.id}>
                   <td>
                     <div className="fecha-cell">
@@ -40,11 +44,15 @@ const HistorialLlamadas = () => {
                   <td>{llamada.centroNombre}</td>
                   <td>
                     <div className="patient-cell">
-                      <div className="patient-name">{llamada.paciente.nombre} {llamada.paciente.apellidoPaterno}</div>
+                      <div className="patient-name">
+                        {llamada.paciente.nombre} {llamada.paciente.apellidoPaterno}
+                      </div>
                     </div>
                   </td>
                   <td>{llamada.paciente.rut}</td>
-                  <td>{llamada.paciente.edad} / {llamada.paciente.sexo}</td>
+                  <td>
+                    {llamada.paciente.edad} / {llamada.paciente.sexo}
+                  </td>
                   <td>
                     <div className="telefono-cell">
                       <Phone size={14} />
@@ -62,6 +70,11 @@ const HistorialLlamadas = () => {
                   </td>
                 </tr>
               ))}
+              {llamadas.length === 0 && (
+                <tr>
+                  <td colSpan={8}>Sin llamadas registradas.</td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>

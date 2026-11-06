@@ -4,18 +4,9 @@
   gap: 24px;
 }
 
-.page-header h1 {
-  font-size: 28px;
-  margin-bottom: 4px;
-}
-
-.page-header p {
-  color: var(--text-secondary);
-}
-
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
 }
 
@@ -48,6 +39,7 @@
   font-size: 28px;
   font-weight: 600;
   line-height: 1.2;
+  font-family: 'Space Grotesk', sans-serif;
 }
 
 .stat-label {
@@ -67,108 +59,16 @@
   }
 }
 
-.card {
-  background: var(--card-bg);
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  overflow: hidden;
-}
-
-.card-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid var(--border);
-}
-
-.card-header h2 {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.table-container {
-  overflow-x: auto;
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-thead {
-  background: var(--bg);
-}
-
-th {
-  padding: 12px 20px;
-  text-align: left;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-td {
-  padding: 12px 20px;
-  border-top: 1px solid var(--border);
-  font-size: 14px;
-}
-
-.patient-cell {
+.list {
   display: flex;
   flex-direction: column;
-}
-
-.patient-name {
-  font-weight: 500;
-}
-
-.patient-rut {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.badge {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.badge-success {
-  background: #d4edda;
-  color: #155724;
-}
-
-.badge-warning {
-  background: #fff3cd;
-  color: #856404;
-}
-
-.badge-orange {
-  background: #ffe5d0;
-  color: #d9480f;
-}
-
-.badge-danger {
-  background: #f8d7da;
-  color: #721c24;
-}
-
-.badge-info {
-  background: #d1ecf1;
-  color: #0c5460;
-}
-
-.list {
-  padding: 8px 0;
 }
 
 .list-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 20px;
+  padding: 14px 20px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -180,12 +80,11 @@ td {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  background: #e3f2fd;
+  background: #E8F4FF;
   color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
 }
 
 .list-item-content {

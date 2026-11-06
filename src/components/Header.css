@@ -1,45 +1,51 @@
 .header {
-  background: var(--card-bg);
-  border-bottom: 1px solid var(--border);
-  padding: 12px 24px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 12px 24px;
+  background: var(--card-bg);
+  border-bottom: 1px solid var(--border);
   position: sticky;
-  top: 0;
-  z-index: 10;
+  top: 36px;
+  z-index: 50;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
-.menu-btn {
-  background: none;
-  border: none;
-  padding: 8px;
+.menu-btn,
+.header-icon-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-primary);
-  border-radius: 6px;
 }
 
-.menu-btn:hover {
+.menu-btn:hover,
+.header-icon-btn:hover {
   background: var(--bg);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
 .header-title h2 {
-  font-size: 18px;
-  font-weight: 600;
-  line-height: 1.2;
+  font-size: 16px;
+  font-family: 'Space Grotesk', sans-serif;
+  margin: 0;
 }
 
 .header-title p {
   font-size: 12px;
   color: var(--text-secondary);
+  margin: 0;
 }
 
 .header-right {
@@ -48,41 +54,18 @@
   gap: 12px;
 }
 
-.header-icon-btn {
-  background: none;
-  border: none;
-  padding: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-primary);
-  border-radius: 6px;
-  position: relative;
-}
-
-.header-icon-btn:hover {
-  background: var(--bg);
-}
-
 .header-user {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 12px 6px 6px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.header-user:hover {
-  background: var(--bg);
 }
 
 .user-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: var(--primary);
-  color: white;
+  background: #E8F4FF;
+  color: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -94,13 +77,17 @@
 }
 
 .user-name {
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
-  line-height: 1.2;
 }
 
 .user-role {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--text-secondary);
-  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .user-info {
+    display: none;
+  }
 }

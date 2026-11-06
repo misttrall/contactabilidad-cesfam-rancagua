@@ -1,14 +1,22 @@
-.btn-secondary {
-  background: white;
-  color: var(--text-primary);
-  border: 1px solid var(--border);
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
-.btn-secondary:hover {
-  background: var(--bg);
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-group select {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
 }
 
 .total-row {
   background: var(--bg);
-  font-weight: 600;
 }

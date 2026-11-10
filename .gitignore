@@ -1,0 +1,29 @@
+# dependencias y build
+node_modules/
+dist/
+build/
+.turbo/
+.vite/
+coverage/
+*.tsbuildinfo
+
+# entorno y secretos
+.env
+.env.*
+!.env.example
+
+# datos de pacientes: NUNCA versionar planillas reales (RNF-12)
+*.xlsx
+*.xls
+*.csv
+!packages/shared/plantillas/*.xlsx
+!packages/shared/plantillas/*.csv
+
+# herramientas
+.DS_Store
+Thumbs.db
+*.log
+.idea/
+.vscode/*
+!.vscode/extensions.json
+docs/mvp/avis/

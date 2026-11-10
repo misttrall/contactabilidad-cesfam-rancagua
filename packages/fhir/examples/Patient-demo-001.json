@@ -1,0 +1,8 @@
+{
+  "resourceType": "Patient",
+  "id": "demo-001",
+  "identifier": [{ "system": "https://hl7chile.cl/fhir/sid/run", "value": "1000001-7" }],
+  "name": [{ "use": "official", "text": "Paciente Demo 001" }],
+  "gender": "male",
+  "telecom": [{ "system": "phone", "value": "+56900000001", "use": "mobile" }]
+}

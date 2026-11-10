@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [master, "feat/**"]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Tipos, pruebas y build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Este gate bloquea el merge: evita repetir el defecto D-01 (build roto) del prototipo.
+      - run: pnpm turbo run typecheck test build
+      - name: Ejemplos FHIR (estructura)
+        run: pnpm --filter @bh/fhir validate
+
+  sin-datos-reales:
+    name: Sin planillas ni datos reales
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Bloquear .xlsx/.xls/.csv fuera de plantillas (RNF-12)
+        run: |
+          malos=$(git ls-files | grep -Ei '\.(xlsx|xls|csv)$' | grep -v '^packages/shared/plantillas/' || true)
+          if [ -n "$malos" ]; then echo "Archivos de datos no permitidos:"; echo "$malos"; exit 1; fi
+      - name: Bloquear node_modules versionado (D-14)
+        run: |
+          if git ls-files | grep -q '^node_modules/'; then echo "node_modules no debe versionarse"; exit 1; fi
+
+  # S6: reemplazar la validación estructural por el HL7 FHIR Validator oficial contra
+  # CL Core y la guía de Agenda APS MINSAL (versiones fijadas en packages/fhir/ig/versions.json).

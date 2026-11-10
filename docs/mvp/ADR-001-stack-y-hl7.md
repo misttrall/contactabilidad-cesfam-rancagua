@@ -44,7 +44,7 @@ infra/        docker-compose, nginx, Keycloak realm, scripts de validación FHIR
 | Formularios | **React Hook Form + Zod** (esquemas de `packages/shared`) | Misma validación (RUT módulo 11, teléfono +569) en cliente y servidor. |
 | UI | **Radix UI (primitivas accesibles) + Tailwind CSS v4** con tokens propios | Accesibilidad WCAG 2.2 AA de base y estética definida por nosotros (no "look" de librería genérica). |
 | Gráficos | Recharts | Ya validado con el cliente en el prototipo. |
-| Backend | **NestJS 11 sobre Node.js 22 LTS** | Modular, inyección de dependencias, guards para rol/centro, OpenAPI automático. |
+| Backend | **NestJS 11 sobre Node.js ≥ 20.19** (Node 22 LTS en producción; el desarrollo corre en 20) | Modular, inyección de dependencias, guards para rol/centro, OpenAPI automático. |
 | Base de datos | **PostgreSQL 16** + **Prisma** | Modelo relacional normalizado (corrige la desnormalización del cap. 6.10) y columna `jsonb` para el recurso FHIR emitido. |
 | Colas | **BullMQ + Redis 7** | Envíos masivos WhatsApp con reintentos, límite de tasa y segundo mensaje programado. |
 | Identidad | **Keycloak 26 (OIDC)** | Roles (funcionaria/encargado/administrador) + atributo `centro`; MFA; federación futura con SSO institucional/SMART on FHIR. |

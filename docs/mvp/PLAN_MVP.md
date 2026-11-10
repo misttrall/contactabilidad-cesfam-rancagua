@@ -47,13 +47,18 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 **Hito H1 (fin S2):** demo interna con carga real. **H2 (fin S4):** flujo A y B de extremo a extremo con datos ficticios → sesión de pruebas con funcionarias (guía cap. 12 actualizada). **H3 (fin S6):** MVP listo para piloto.
 
 ### S0 — Fundaciones
-- [ ] `.gitignore` y retiro de `node_modules` del índice (D-14); mover el prototipo a `legacy/prototipo/` como referencia (o mantenerlo solo en `master`).
-- [ ] Monorepo pnpm + Turborepo: `apps/web`, `apps/api`, `packages/{fhir,shared,ui}`.
-- [ ] `docker-compose` dev: Postgres 16, Redis 7, Keycloak 26, MailPit; `.env.example` sin secretos.
-- [ ] CI GitHub Actions: lint (ESLint + Prettier), `tsc --noEmit`, Vitest, build; **bloquea merge si falla** (evita repetir D-01).
-- [ ] `packages/ui`: tokens de la skill → Tailwind v4 `@theme`; componentes base (Button, Input, RutInput, EstadoCitaBadge, TablaClinica, Drawer, BannerAmbiente).
-- [ ] `packages/fhir`: descarga y fijación de paquetes CL Core y Agenda APS (versión fijada en `ig/versions.json`), tipos `@types/fhir` R4, job de CI con HL7 FHIR Validator CLI sobre `packages/fhir/examples`.
-- [ ] Datos semilla **claramente ficticios** (Paciente Demo 001…, RUT de prueba válidos, teléfonos +56 9 0000 00xx).
+**Estado: completado en lo esencial (ver pendientes de traspaso al final de esta sección).**
+
+- [x] `.gitignore` y retiro de `node_modules` del índice (D-14); prototipo movido a `legacy/prototipo/`.
+- [x] Monorepo pnpm + Turborepo: `apps/web`, `apps/api`, `packages/{fhir,shared,ui}`; `pnpm turbo run typecheck test build` en verde (31 pruebas).
+- [x] `docker-compose` dev: Postgres 16, Redis 7, Keycloak 26, MailPit; `.env.example` sin secretos.
+- [x] CI GitHub Actions: `tsc --noEmit`, Vitest y build como gate, más chequeos de "sin planillas/datos reales" y "sin node_modules versionado". *(ESLint/Prettier: pendiente, ver traspaso.)*
+- [x] `packages/ui`: tokens de la skill y componentes `EstadoCitaBadge`, `BannerAmbiente`, `RutInput` con pruebas. *(Tailwind v4, Button, TablaClinica y Drawer: S1.)*
+- [x] `packages/fhir`: mapeo estado→FHIR con prueba de RN-01, `Patient`, `CapabilityStatement`, ejemplo y validación estructural; `ig/versions.json` creado. *(Fijar versiones de CL Core/Agenda APS y validador oficial: S2/S6.)*
+- [x] Datos semilla **claramente ficticios** (`packages/shared/src/semillas.ts`; RUT 1000001-7…, teléfonos +56 9 0000 00xx).
+- [x] API NestJS con `/health` y `/fhir/R4/metadata`, helmet y configuración validada al arrancar.
+
+**Pendiente de traspaso a S1:** ESLint + Prettier en CI; Tailwind v4 y componentes restantes; Prisma y migraciones; realm de Keycloak; fijar versiones de las guías FHIR chilenas; `.nvmrc`/Node 22 en producción.
 
 ### S1 — Identidad, roles y catálogos
 - [ ] Realm Keycloak versionado (`infra/keycloak/realm.json`): roles, atributo `centro_id`, MFA opcional para administrador, tema de login con tokens.

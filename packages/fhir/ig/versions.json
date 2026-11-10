@@ -1,0 +1,18 @@
+{
+  "_nota": "Versiones de las guías de implementación chilenas que validamos en CI. Ambas están en evolución (ballot / build continuo): FIJAR aquí la versión exacta al iniciar S2 y revisar por hito. Ver ADR-001 §1.",
+  "fhirVersion": "4.0.1",
+  "guias": [
+    {
+      "id": "hl7.fhir.cl.clcore",
+      "descripcion": "CL Core (HL7 Chile)",
+      "version": "POR_FIJAR",
+      "referencia": "https://build.fhir.org/ig/HL7Chile/clcore_ig/"
+    },
+    {
+      "id": "Minsal-CL/agenda",
+      "descripcion": "Gestión de citas médicas enfocada en APS (MINSAL)",
+      "version": "POR_FIJAR",
+      "referencia": "https://build.fhir.org/ig/Minsal-CL/agenda/"
+    }
+  ]
+}

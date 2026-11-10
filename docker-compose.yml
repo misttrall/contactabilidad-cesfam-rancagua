@@ -1,9 +1,41 @@
-version: '3.8'
-
+# Infraestructura de DESARROLLO. Credenciales de ejemplo, no usar fuera de la máquina local.
+# La app (api/web) corre con `pnpm dev`; aquí solo van los servicios de apoyo.
 services:
-  web:
-    build: .
-    ports:
-      - "8080:80"
-    container_name: contactabilidad-cesfam
-    restart: unless-stopped
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: businesshub
+      POSTGRES_PASSWORD: businesshub
+      POSTGRES_DB: businesshub
+      TZ: America/Santiago
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U businesshub"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8081
+    ports: ["8081:8081"]
+    # S1: importar infra/keycloak/realm.json con roles y atributo centro_id.
+
+  mailpit:
+    image: axllent/mailpit:latest
+    ports: ["8025:8025", "1025:1025"]
+
+volumes:
+  pgdata:

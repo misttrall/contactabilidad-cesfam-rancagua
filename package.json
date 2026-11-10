@@ -1,27 +1,23 @@
 {
-  "name": "contactabilidad-cesfam-rancagua-mockup",
+  "name": "businesshub-salud",
   "private": true,
-  "version": "0.1.0",
-  "type": "module",
+  "version": "0.2.0",
+  "description": "BusinessHub Salud - Contactabilidad CESFAM Rancagua (MVP)",
+  "packageManager": "pnpm@11.15.1",
+  "engines": { "node": ">=20.19" },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-router-dom": "^6.22.3",
-    "lucide-react": "^0.344.0",
-    "date-fns": "^3.3.1",
-    "recharts": "^2.12.2",
-    "xlsx": "^0.18.5"
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write \"**/*.{ts,tsx,json,md,css,yml}\" --ignore-path .gitignore",
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down"
   },
   "devDependencies": {
-    "@types/react": "^18.2.56",
-    "@types/react-dom": "^18.2.19",
-    "@vitejs/plugin-react": "^4.2.1",
-    "typescript": "^5.2.2",
-    "vite": "^5.1.4"
+    "prettier": "^3.4.0",
+    "turbo": "^2.3.0",
+    "typescript": "^5.7.0"
   }
 }

@@ -1,0 +1,49 @@
+/* Estilos de componentes: SOLO tokens de tokens.css (nada de colores sueltos). */
+
+/* ---------- Badge de estado ---------- */
+.bh-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  font-weight: var(--weight-medium);
+  line-height: var(--leading-tight);
+  white-space: nowrap;
+}
+.bh-badge--md { padding: 2px var(--space-2); font-size: var(--text-sm); }
+.bh-badge--sm { padding: 1px 6px; font-size: var(--text-xs); }
+
+.bh-badge--sin_enviar { color: var(--estado-sin-enviar-fg); background: var(--estado-sin-enviar-bg); border-color: var(--estado-sin-enviar-border); }
+.bh-badge--enviado { color: var(--estado-enviado-fg); background: var(--estado-enviado-bg); border-color: var(--estado-enviado-border); }
+.bh-badge--confirmado { color: var(--estado-confirmado-fg); background: var(--estado-confirmado-bg); border-color: var(--estado-confirmado-border); }
+.bh-badge--sin_respuesta { color: var(--estado-sin-respuesta-fg); background: var(--estado-sin-respuesta-bg); border-color: var(--estado-sin-respuesta-border); }
+.bh-badge--cancelado { color: var(--estado-cancelado-fg); background: var(--estado-cancelado-bg); border-color: var(--estado-cancelado-border); }
+
+/* ---------- Banner de ambiente (RNF-02) ---------- */
+.bh-ambiente {
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+  letter-spacing: 0.02em;
+  color: var(--color-on-primary);
+  border-top: 4px solid transparent;
+}
+.bh-ambiente--demo { background: var(--ambiente-demo); }
+.bh-ambiente--qa { background: var(--ambiente-qa); }
+
+/* ---------- Campos ---------- */
+.bh-campo { display: flex; flex-direction: column; gap: var(--space-1); }
+.bh-campo__label { font-size: var(--text-sm); color: var(--color-text-secondary); font-weight: var(--weight-medium); }
+.bh-campo__error { font-size: var(--text-sm); color: var(--color-danger); }
+.bh-input {
+  height: 36px;
+  padding: 0 var(--space-3);
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+}
+.bh-input--rut { font-size: var(--text-md); letter-spacing: 0.02em; }
+.bh-input[aria-invalid='true'] { border-color: var(--color-danger); }

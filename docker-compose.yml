@@ -8,34 +8,41 @@ services:
       POSTGRES_PASSWORD: businesshub
       POSTGRES_DB: businesshub
       TZ: America/Santiago
-    ports: ["5432:5432"]
+    ports: ['5432:5432']
     volumes: [pgdata:/var/lib/postgresql/data]
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U businesshub"]
+      test: ['CMD-SHELL', 'pg_isready -U businesshub']
       interval: 5s
       retries: 10
 
   redis:
     image: redis:7-alpine
-    ports: ["6379:6379"]
+    ports: ['6379:6379']
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       retries: 10
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.0
-    command: start-dev
+    command: start-dev --import-realm
     environment:
       KC_BOOTSTRAP_ADMIN_USERNAME: admin
       KC_BOOTSTRAP_ADMIN_PASSWORD: admin
       KC_HTTP_PORT: 8081
-    ports: ["8081:8081"]
-    # S1: importar infra/keycloak/realm.json con roles y atributo centro_id.
+      KC_HEALTH_ENABLED: 'true'
+      # Tema en caliente: sin caché para iterar el diseño de login.
+      KC_SPI_THEME_CACHE_THEMES: 'false'
+      KC_SPI_THEME_CACHE_TEMPLATES: 'false'
+      KC_SPI_THEME_STATIC_MAX_AGE: '-1'
+    ports: ['8081:8081']
+    volumes:
+      - ./infra/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./infra/keycloak/theme:/opt/keycloak/themes:ro
 
   mailpit:
     image: axllent/mailpit:latest
-    ports: ["8025:8025", "1025:1025"]
+    ports: ['8026:8025', '1026:1025']
 
 volumes:
   pgdata:

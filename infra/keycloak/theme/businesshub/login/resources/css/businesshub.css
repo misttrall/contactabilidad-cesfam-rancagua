@@ -1,0 +1,129 @@
+/* Tema de login BusinessHub Salud: mismos tokens que packages/ui/src/tokens.css
+   (skill diseno-clinico-avis). Sin imágenes ni fuentes remotas. */
+:root {
+  --bh-primary: #0f5c6e;
+  --bh-primary-hover: #0b4856;
+  --bh-bg: #f5f7f9;
+  --bh-surface: #ffffff;
+  --bh-text: #1b2430;
+  --bh-text-secondary: #4a5565;
+  --bh-border: #d5dae1;
+  --bh-border-strong: #8a94a3;
+  --bh-danger: #b42318;
+  --bh-danger-bg: #fef3f2;
+}
+
+html,
+body,
+.login-pf body {
+  background: var(--bh-bg) !important;
+}
+body {
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  font-size: 14px;
+  color: var(--bh-text);
+}
+.login-pf {
+  background: var(--bh-bg) !important;
+}
+
+/* Tarjeta */
+#kc-container,
+.card-pf {
+  max-width: 420px;
+}
+.card-pf {
+  background: var(--bh-surface);
+  border: 1px solid var(--bh-border);
+  border-top: 4px solid var(--bh-primary);
+  border-radius: 8px;
+  box-shadow: none;
+  padding: 24px 28px;
+}
+
+/* Cabecera con el nombre del sistema */
+#kc-header-wrapper,
+.login-pf-page .kc-logo-text {
+  color: var(--bh-primary) !important;
+  font-weight: 600;
+  font-size: 20px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+#kc-page-title,
+#kc-header {
+  color: var(--bh-text);
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* Aviso de ambiente DEMO bajo la tarjeta */
+.card-pf::after {
+  content: 'DEMO · Datos ficticios · No es un sistema oficial del CESFAM';
+  display: block;
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bh-border);
+  font-size: 12px;
+  font-weight: 600;
+  color: #6d28d9;
+}
+
+/* Campos */
+.form-control,
+input[type='text'],
+input[type='password'] {
+  height: 36px;
+  border: 1px solid var(--bh-border-strong);
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--bh-text);
+  background: var(--bh-surface);
+}
+.form-control:focus,
+input:focus {
+  border-color: #1d4ed8;
+  box-shadow:
+    0 0 0 2px #fff,
+    0 0 0 4px #1d4ed8;
+  outline: none;
+}
+label,
+.control-label {
+  color: var(--bh-text-secondary);
+  font-weight: 500;
+}
+
+/* Botón primario */
+.btn-primary,
+#kc-login {
+  background: var(--bh-primary) !important;
+  border-color: var(--bh-primary) !important;
+  border-radius: 6px;
+  height: 36px;
+  font-weight: 600;
+  background-image: none !important;
+  text-shadow: none;
+}
+.btn-primary:hover,
+#kc-login:hover {
+  background: var(--bh-primary-hover) !important;
+}
+
+/* Errores */
+.alert-error,
+.pf-c-alert.pf-m-danger {
+  background: var(--bh-danger-bg);
+  border: 1px solid #f5b5c3;
+  color: var(--bh-danger);
+  border-radius: 4px;
+}
+a {
+  color: #1d4ed8;
+}

@@ -1,0 +1,172 @@
+{
+  "realm": "businesshub",
+  "displayName": "BusinessHub Salud",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": false,
+  "duplicateEmailsAllowed": false,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "maxFailureWaitSeconds": 900,
+  "loginTheme": "businesshub",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["es"],
+  "defaultLocale": "es",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 28800,
+  "roles": {
+    "realm": [
+      { "name": "funcionaria", "description": "Operadora del call center de un Cesfam" },
+      { "name": "encargado", "description": "Supervisor del call center (todos los centros)" },
+      { "name": "administrador", "description": "Administración del sistema" }
+    ]
+  },
+  "components": {
+    "org.keycloak.userprofile.UserProfileProvider": [
+      {
+        "providerId": "declarative-user-profile",
+        "config": {
+          "kc.user.profile.config": [
+            "{\"attributes\":[{\"name\":\"username\",\"displayName\":\"${username}\",\"validations\":{\"length\":{\"min\":3,\"max\":255}},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}},{\"name\":\"email\",\"displayName\":\"${email}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}},{\"name\":\"firstName\",\"displayName\":\"${firstName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}},{\"name\":\"lastName\",\"displayName\":\"${lastName}\",\"required\":{\"roles\":[\"user\"]},\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\",\"user\"]}},{\"name\":\"centro_id\",\"displayName\":\"Código de centro\",\"permissions\":{\"view\":[\"admin\",\"user\"],\"edit\":[\"admin\"]}}]}"
+          ]
+        }
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "businesshub-api",
+      "name": "BusinessHub API (servidor de recursos)",
+      "enabled": true,
+      "bearerOnly": true
+    },
+    {
+      "clientId": "businesshub-web",
+      "name": "BusinessHub Salud (web)",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "implicitFlowEnabled": false,
+      "redirectUris": ["http://localhost:5173/*"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "http://localhost:5173/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "audiencia-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "businesshub-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "centro_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "centro_id",
+            "claim.name": "centro_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "businesshub-dev-cli",
+      "name": "SOLO DESARROLLO: pruebas automatizadas con usuario y contraseña",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "protocolMappers": [
+        {
+          "name": "audiencia-api",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "businesshub-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        },
+        {
+          "name": "centro_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "centro_id",
+            "claim.name": "centro_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "funcionaria.csc",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Funcionaria",
+      "lastName": "Demo Centro",
+      "email": "funcionaria.csc@demo.invalid",
+      "attributes": { "centro_id": ["CSC"] },
+      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
+      "realmRoles": ["funcionaria"]
+    },
+    {
+      "username": "funcionaria.csn",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Funcionaria",
+      "lastName": "Demo Norte",
+      "email": "funcionaria.csn@demo.invalid",
+      "attributes": { "centro_id": ["CSN"] },
+      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
+      "realmRoles": ["funcionaria"]
+    },
+    {
+      "username": "encargado.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Encargado",
+      "lastName": "Demo",
+      "email": "encargado.demo@demo.invalid",
+      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
+      "realmRoles": ["encargado"]
+    },
+    {
+      "username": "admin.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Administrador",
+      "lastName": "Demo",
+      "email": "admin.demo@demo.invalid",
+      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
+      "realmRoles": ["administrador"]
+    },
+    {
+      "username": "sinrol.demo",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Sin",
+      "lastName": "Rol Demo",
+      "email": "sinrol.demo@demo.invalid",
+      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }]
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+node_modules
+dist
+.turbo
+legacy
+pnpm-lock.yaml
+*.md
+apps/api/prisma/migrations
+infra/keycloak/realm.json

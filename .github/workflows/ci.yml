@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [master, "feat/**"]
+    branches: [master, 'feat/**']
   pull_request:
 
 concurrency:
@@ -22,6 +22,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # Este gate bloquea el merge: evita repetir el defecto D-01 (build roto) del prototipo.
+      - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm turbo run typecheck test build
       - name: Ejemplos FHIR (estructura)
         run: pnpm --filter @bh/fhir validate

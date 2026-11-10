@@ -42,7 +42,7 @@ infra/        docker-compose, nginx, Keycloak realm, scripts de validación FHIR
 | Ruteo y datos | **TanStack Router + TanStack Query** | Rutas tipadas, caché y reintentos de red; elimina el defecto D-02 (estado aislado por pantalla). |
 | Tablas | **TanStack Table** (virtualizada) | Listas de cientos de citas con filtros, orden y selección masiva. |
 | Formularios | **React Hook Form + Zod** (esquemas de `packages/shared`) | Misma validación (RUT módulo 11, teléfono +569) en cliente y servidor. |
-| UI | **Radix UI (primitivas accesibles) + Tailwind CSS v4** con tokens propios | Accesibilidad WCAG 2.2 AA de base y estética definida por nosotros (no "look" de librería genérica). |
+| UI | **CSS con tokens propios** (`packages/ui`) + **Radix UI** para componentes complejos cuando se necesiten | Accesibilidad WCAG 2.2 AA de base y estética definida por nosotros. *Actualizado en S1:* se descartó Tailwind v4 por ahora: los tokens de la skill ya son la fuente única y duplicarlos en un tema de Tailwind agregaba complejidad sin beneficio. Se reevalúa si crece el equipo de frontend. |
 | Gráficos | Recharts | Ya validado con el cliente en el prototipo. |
 | Backend | **NestJS 11 sobre Node.js ≥ 20.19** (Node 22 LTS en producción; el desarrollo corre en 20) | Modular, inyección de dependencias, guards para rol/centro, OpenAPI automático. |
 | Base de datos | **PostgreSQL 16** + **Prisma** | Modelo relacional normalizado (corrige la desnormalización del cap. 6.10) y columna `jsonb` para el recurso FHIR emitido. |

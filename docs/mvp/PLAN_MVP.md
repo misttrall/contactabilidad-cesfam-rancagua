@@ -61,11 +61,22 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 **Pendiente de traspaso a S1:** ESLint + Prettier en CI; Tailwind v4 y componentes restantes; Prisma y migraciones; realm de Keycloak; fijar versiones de las guías FHIR chilenas; `.nvmrc`/Node 22 en producción.
 
 ### S1 — Identidad, roles y catálogos
-- [ ] Realm Keycloak versionado (`infra/keycloak/realm.json`): roles, atributo `centro_id`, MFA opcional para administrador, tema de login con tokens.
-- [ ] API: guard JWT + `@Roles()` + `@ScopeCentro()` (funcionaria solo su centro; encargado/administrador todos) — matriz de permisos tabla 8.
-- [ ] Modelo Prisma: `centro`, `usuario` (espejo de Keycloak), `profesional`, `motivo_llamada`, `parametro`, `audit_event` (append-only, trigger que impide UPDATE/DELETE).
-- [ ] Shell web: login, layout con barra colapsable, header con centro activo, menú filtrado por rol, banner de ambiente, modo lado a lado (≤ 960 px).
-- [ ] FHIR: `Organization`/`Location` (centros), `Practitioner` (profesionales), `CodeSystem` `motivo-llamada`, `resultado-llamada`, `tipo-cita`.
+**Estado: completado y verificado de punta a punta** (navegador → API → Keycloak y Postgres reales) con 93 pruebas automáticas.
+
+- [x] Realm Keycloak versionado (`infra/keycloak/realm.json`): roles, atributo `centro_id` como claim, PKCE S256, tema de login con tokens, bloqueo por intentos, sesión de 30 min de inactividad. Ver [infra/keycloak/README.md](../../infra/keycloak/README.md). *(MFA y realm de QA/PROD: S6.)*
+- [x] API: `AuthGuard` global (JWT RS256 contra el JWKS de Keycloak, emisor + audiencia) y `ModuloGuard` con la matriz de permisos (tabla 8). El alcance por centro se resuelve en `@bh/shared`; una funcionaria que pide otro centro recibe 403, no un filtro silencioso. *(Se implementó como `@RequiereModulo()` + `resolverAlcance()` en vez de `@Roles()`/`@ScopeCentro()`.)*
+- [x] Prisma: `centro`, `usuario` (alta automática desde el token), `profesional`, `motivo_llamada`, `parametro`, `audit_event` con trigger que bloquea UPDATE, DELETE y TRUNCATE (probado en Postgres real). Semilla ficticia idempotente (`pnpm --filter @bh/api db:seed`).
+- [x] Auditoría: `sesion.ingreso`, `acceso.denegado` y `motivo.actualizar` (con el detalle del cambio).
+- [x] Shell web: login OIDC (tokens en `sessionStorage`), menú filtrado por rol, ruta protegida por módulo («Sin acceso»), banner de ambiente, menú contraído a ≤ 960 px (probado a 640 px), pantalla de Configuración con centros y activación de motivos.
+- [x] FHIR: `Organization`, `Location`, `Practitioner`, `PractitionerRole` (búsqueda y lectura con alcance por centro; un centro ajeno responde 404) y `CodeSystem` `motivo-llamada` (desde la BD), `resultado-llamada`, `tipo-cita`, `estado-contacto`. El `CapabilityStatement` declara solo lo implementado.
+- [x] ESLint + Prettier en el CI (`pnpm lint`, `pnpm format:check`).
+
+**Decisiones tomadas en S1**
+- **Sin Tailwind por ahora:** los componentes usan CSS con los tokens de la skill (una sola fuente de verdad, sin duplicar el sistema de diseño). Radix UI se incorpora cuando aparezcan componentes complejos (Drawer/Dialog en S3–S4).
+- **Funcionaria sin centro = acceso denegado.** Corrige la RN-13 del prototipo («sin centro = todos»), que filtraría datos de otros centros si faltara configurar a una funcionaria.
+- `audit_event.usuarioId` guarda el `sub` de Keycloak (estable aunque se reconstruya la base).
+
+**Pendiente a futuro de S1:** código DEIS de cada centro (CL Core identifica establecimientos por DEIS; hoy se usa un código local, ver §7); `parametro` aún sin endpoints de edición (llega con S3, cuando se usan); gestión de usuarios y asignación de centro desde la UI (hoy en Keycloak).
 
 ### S2 — Carga de planilla AVIS
 - [ ] Levantar con el Cesfam las **columnas reales** de la exportación AVIS (sin datos de pacientes) — bloqueante, ver §7.

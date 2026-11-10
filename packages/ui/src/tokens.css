@@ -7,25 +7,25 @@
  */
 :root {
   /* ---------- Marca / primario (azul petróleo) ---------- */
-  --color-primary: #0f5c6e;          /* 7.3:1 sobre blanco */
+  --color-primary: #0f5c6e; /* 7.3:1 sobre blanco */
   --color-primary-hover: #0b4856;
   --color-primary-active: #083a45;
-  --color-primary-subtle: #e6f1f3;   /* fondos de selección, fila activa */
+  --color-primary-subtle: #e6f1f3; /* fondos de selección, fila activa */
   --color-on-primary: #ffffff;
 
   /* ---------- Neutros ---------- */
-  --color-bg: #f5f7f9;               /* fondo de la app */
-  --color-surface: #ffffff;          /* tarjetas, tablas, paneles */
-  --color-surface-muted: #f9fafb;    /* cabecera de tabla, zebra */
-  --color-text: #1b2430;             /* texto principal */
-  --color-text-secondary: #4a5565;   /* etiquetas, metadatos */
-  --color-text-muted: #64707f;       /* ayuda, placeholders (4.9:1) */
-  --color-border: #d5dae1;           /* bordes decorativos */
-  --color-border-strong: #8a94a3;    /* bordes de inputs (3:1) */
+  --color-bg: #f5f7f9; /* fondo de la app */
+  --color-surface: #ffffff; /* tarjetas, tablas, paneles */
+  --color-surface-muted: #f9fafb; /* cabecera de tabla, zebra */
+  --color-text: #1b2430; /* texto principal */
+  --color-text-secondary: #4a5565; /* etiquetas, metadatos */
+  --color-text-muted: #64707f; /* ayuda, placeholders (4.9:1) */
+  --color-border: #d5dae1; /* bordes decorativos */
+  --color-border-strong: #8a94a3; /* bordes de inputs (3:1) */
   --color-link: #1d4ed8;
 
   /* ---------- Feedback ---------- */
-  --color-danger: #b42318;           /* error, acción destructiva */
+  --color-danger: #b42318; /* error, acción destructiva */
   --color-danger-bg: #fef3f2;
   --color-success: #166534;
   --color-success-bg: #ecfdf3;
@@ -47,11 +47,11 @@
   --estado-confirmado-bg: #ecfdf3;
   --estado-confirmado-border: #a6dfbb;
 
-  --estado-sin-respuesta-fg: #8a4b00;   /* ámbar: NUNCA rojo (RN-01) */
+  --estado-sin-respuesta-fg: #8a4b00; /* ámbar: NUNCA rojo (RN-01) */
   --estado-sin-respuesta-bg: #fff6e5;
   --estado-sin-respuesta-border: #f3cf8c;
 
-  --estado-cancelado-fg: #9f1239;       /* granate, distinto del rojo de error */
+  --estado-cancelado-fg: #9f1239; /* granate, distinto del rojo de error */
   --estado-cancelado-bg: #fff1f3;
   --estado-cancelado-border: #f5b5c3;
 
@@ -65,15 +65,15 @@
   --ambiente-qa: #b45309;
 
   /* ---------- Tipografía ---------- */
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-  --text-xs: 0.75rem;     /* 12 px — mínimo absoluto */
-  --text-sm: 0.8125rem;   /* 13 px — metadatos de tabla */
-  --text-base: 0.875rem;  /* 14 px — base de trabajo */
-  --text-md: 1rem;        /* 16 px — inputs principales (RUT) */
-  --text-lg: 1.125rem;    /* 18 px — títulos de tarjeta */
-  --text-xl: 1.25rem;     /* 20 px — título de página */
-  --text-kpi: 1.75rem;    /* 28 px — cifras KPI */
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+  --text-xs: 0.75rem; /* 12 px — mínimo absoluto */
+  --text-sm: 0.8125rem; /* 13 px — metadatos de tabla */
+  --text-base: 0.875rem; /* 14 px — base de trabajo */
+  --text-md: 1rem; /* 16 px — inputs principales (RUT) */
+  --text-lg: 1.125rem; /* 18 px — títulos de tarjeta */
+  --text-xl: 1.25rem; /* 20 px — título de página */
+  --text-kpi: 1.75rem; /* 28 px — cifras KPI */
   --leading-tight: 1.25;
   --leading-normal: 1.5;
   --weight-regular: 400;
@@ -91,11 +91,11 @@
   --space-8: 48px;
 
   /* ---------- Forma ---------- */
-  --radius-sm: 4px;       /* badges, inputs */
-  --radius-md: 6px;       /* botones, tarjetas */
-  --radius-lg: 8px;       /* paneles, drawers */
+  --radius-sm: 4px; /* badges, inputs */
+  --radius-md: 6px; /* botones, tarjetas */
+  --radius-lg: 8px; /* paneles, drawers */
   --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.10);  /* solo drawers y menús */
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.1); /* solo drawers y menús */
   --focus-ring: 0 0 0 2px var(--color-surface), 0 0 0 4px #1d4ed8;
 
   /* ---------- Layout ---------- */
@@ -105,7 +105,7 @@
   --row-h-compact: 36px;
   --row-h-comfortable: 44px;
   --drawer-w: min(440px, 100%);
-  --bp-lado-a-lado: 960px;   /* <= este ancho: modo convivencia con AVIS */
+  --bp-lado-a-lado: 960px; /* <= este ancho: modo convivencia con AVIS */
   --bp-minimo: 640px;
 
   /* ---------- Movimiento ---------- */

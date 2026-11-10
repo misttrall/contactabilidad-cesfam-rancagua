@@ -8,7 +8,19 @@ export interface CapabilityStatementOpciones {
   baseUrl: string;
 }
 
-const RECURSOS_S0: string[] = [];
+interface RecursoSoportado {
+  type: string;
+  interaction: ('read' | 'search-type')[];
+}
+
+/** S1: catálogos y recursos de referencia. Appointment, Task, etc. llegan en S2-S4. */
+export const RECURSOS_SOPORTADOS: RecursoSoportado[] = [
+  { type: 'Organization', interaction: ['read', 'search-type'] },
+  { type: 'Location', interaction: ['read', 'search-type'] },
+  { type: 'Practitioner', interaction: ['read', 'search-type'] },
+  { type: 'PractitionerRole', interaction: ['read', 'search-type'] },
+  { type: 'CodeSystem', interaction: ['read'] },
+];
 
 export function construirCapabilityStatement(o: CapabilityStatementOpciones) {
   return {
@@ -17,13 +29,23 @@ export function construirCapabilityStatement(o: CapabilityStatementOpciones) {
     date: o.fecha,
     kind: 'instance',
     software: { name: 'BusinessHub Salud', version: o.version },
-    implementation: { description: 'BusinessHub Salud - Contactabilidad CESFAM Rancagua', url: o.baseUrl },
+    implementation: {
+      description: 'BusinessHub Salud - Contactabilidad CESFAM Rancagua',
+      url: o.baseUrl,
+    },
     fhirVersion: '4.0.1',
     format: ['json'],
     rest: [
       {
         mode: 'server',
-        resource: RECURSOS_S0.map((type) => ({ type, interaction: [{ code: 'read' }] })),
+        security: {
+          description:
+            'OAuth 2.0 / OpenID Connect (Keycloak). Bearer token obligatorio salvo /metadata.',
+        },
+        resource: RECURSOS_SOPORTADOS.map((r) => ({
+          type: r.type,
+          interaction: r.interaction.map((code) => ({ code })),
+        })),
       },
     ],
   } as const;

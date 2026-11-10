@@ -28,13 +28,24 @@ Node 20.19+ (ver `.nvmrc`), pnpm 11, Docker (para Postgres/Redis/Keycloak).
 
 ```bash
 pnpm install
+pnpm lint && pnpm format:check        # ESLint y Prettier
 pnpm turbo run typecheck test build   # lo mismo que ejecuta el CI
-pnpm --filter @bh/web dev             # web en http://localhost:5173
-pnpm --filter @bh/api dev             # API en http://localhost:3000 (GET /health, /fhir/R4/metadata)
-pnpm infra:up                         # Postgres, Redis, Keycloak, Mailpit (solo desarrollo)
 ```
 
-Copiar `.env.example` a `.env` para configurar ambiente y URLs.
+## Levantar el entorno de desarrollo
+
+```bash
+docker compose up -d postgres keycloak            # BD y login (Keycloak importa el realm solo)
+cp .env.example apps/api/.env                     # la API lee DATABASE_URL de aquí
+pnpm --filter @bh/api db:migrate                  # crea tablas y el trigger de auditoría
+pnpm --filter @bh/api db:seed                     # centros, motivos y profesionales ficticios
+pnpm --filter @bh/api dev                         # API en http://localhost:3000
+pnpm --filter @bh/web dev                         # web en http://localhost:5173
+```
+
+Usuarios de prueba (ficticios, solo local) en [infra/keycloak/README.md](infra/keycloak/README.md): `funcionaria.csc`, `encargado.demo`, `admin.demo`… con la contraseña de desarrollo indicada allí.
+
+En la API: `GET /health`, `GET /fhir/R4/metadata` (públicos) y el resto con `Authorization: Bearer <token>`.
 
 ## Reglas del repositorio
 

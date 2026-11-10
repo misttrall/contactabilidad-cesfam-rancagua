@@ -1,0 +1,101 @@
+// Modelo de datos del MVP (S1: identidad, roles y catálogos).
+// Normalizado respecto del prototipo (informe 6.10): Usuario y Centro son entidades, no texto.
+// Los ids son UUID y se reutilizan como `id` de los recursos FHIR (Organization, Location, Practitioner).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Rol {
+  funcionaria
+  encargado
+  administrador
+}
+
+/// Cesfam. Se identifica en el token de Keycloak por `codigo` (claim centro_id).
+model Centro {
+  id            String        @id @default(uuid()) @db.Uuid
+  codigo        String        @unique
+  nombre        String
+  activo        Boolean       @default(true)
+  creadoEn      DateTime      @default(now()) @db.Timestamptz(6)
+  usuarios      Usuario[]
+  profesionales Profesional[]
+
+  @@map("centro")
+}
+
+/// Espejo mínimo de la identidad de Keycloak (alta automática en el primer ingreso).
+/// No se guarda correo ni contraseña: la identidad vive en Keycloak.
+model Usuario {
+  id            String    @id @default(uuid()) @db.Uuid
+  keycloakId    String    @unique
+  nombre        String
+  rol           Rol
+  centroId      String?   @db.Uuid
+  centro        Centro?   @relation(fields: [centroId], references: [id])
+  activo        Boolean   @default(true)
+  creadoEn      DateTime  @default(now()) @db.Timestamptz(6)
+  ultimoIngreso DateTime? @db.Timestamptz(6)
+
+  @@index([centroId])
+  @@map("usuario")
+}
+
+model Profesional {
+  id           String  @id @default(uuid()) @db.Uuid
+  nombre       String
+  especialidad String?
+  centroId     String  @db.Uuid
+  centro       Centro  @relation(fields: [centroId], references: [id])
+  activo       Boolean @default(true)
+
+  @@index([centroId])
+  @@map("profesional")
+}
+
+/// Catálogo de motivos de llamada entrante (informe 4.1, tabla 11).
+model MotivoLlamada {
+  id          String  @id @default(uuid()) @db.Uuid
+  codigo      String  @unique
+  descripcion String
+  orden       Int     @default(0)
+  activo      Boolean @default(true)
+
+  @@map("motivo_llamada")
+}
+
+/// Parámetros de operación (anticipación de envío, ventana horaria, segundo mensaje...).
+model Parametro {
+  clave          String   @id
+  valor          Json
+  actualizadoEn  DateTime @default(now()) @updatedAt @db.Timestamptz(6)
+  actualizadoPor String?  @db.Uuid
+
+  @@map("parametro")
+}
+
+/// Bitácora append-only (Ley 21.719 / informe 13.3). La migración `auditoria_append_only`
+/// impide UPDATE y DELETE con un trigger. NUNCA guardar RUT completo ni datos clínicos en `detalle`.
+model AuditEvent {
+  id        BigInt   @id @default(autoincrement())
+  ocurrioEn DateTime @default(now()) @db.Timestamptz(6)
+  usuarioId String?  @db.Uuid
+  /// Código estable, p. ej. "motivo.actualizar", "sesion.ingreso", "acceso.denegado".
+  accion    String
+  recurso   String
+  recursoId String?
+  centroId  String?  @db.Uuid
+  ip        String?
+  detalle   Json?
+
+  @@index([ocurrioEn])
+  @@index([usuarioId])
+  @@index([accion])
+  @@map("audit_event")
+}

@@ -21,7 +21,12 @@ describe('mapeo de estados a FHIR', () => {
 });
 
 describe('Patient', () => {
-  const dom = { rut: '1.000.001-7', nombre: 'Paciente Demo 001', sexo: 'M', telefono: '+56900000001' } as const;
+  const dom = {
+    rut: '1.000.001-7',
+    nombre: 'Paciente Demo 001',
+    sexo: 'M',
+    telefono: '+56900000001',
+  } as const;
   it('emite identifier normalizado y sexo FHIR', () => {
     const p = pacienteAFhir(dom, 'p1');
     expect(p.identifier[0]?.value).toBe('1000001-7');
@@ -37,7 +42,11 @@ describe('Patient', () => {
 
 describe('CapabilityStatement', () => {
   it('declara FHIR 4.0.1 en JSON', () => {
-    const c = construirCapabilityStatement({ version: '0.2.0', fecha: '2026-11-10T00:00:00Z', baseUrl: 'http://x' });
+    const c = construirCapabilityStatement({
+      version: '0.2.0',
+      fecha: '2026-11-10T00:00:00Z',
+      baseUrl: 'http://x',
+    });
     expect(c.fhirVersion).toBe('4.0.1');
     expect(c.format).toEqual(['json']);
   });

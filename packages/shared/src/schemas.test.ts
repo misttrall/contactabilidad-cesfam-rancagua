@@ -16,12 +16,21 @@ const filaOk = {
 
 describe('filaPlanillaSchema', () => {
   it('normaliza RUT y teléfono', () => {
-    const r = filaPlanillaSchema.safeParse({ ...filaOk, rut: '1.000.001-7', telefono: '+56 9 1234 5678' });
+    const r = filaPlanillaSchema.safeParse({
+      ...filaOk,
+      rut: '1.000.001-7',
+      telefono: '+56 9 1234 5678',
+    });
     expect(r.success && r.data.telefono).toBe('+56912345678');
     expect(r.success && r.data.rut).toBe('1000001-7');
   });
   it('rechaza RUT inválido, hora fuera de rango y tipo desconocido', () => {
-    const r = filaPlanillaSchema.safeParse({ ...filaOk, rut: '1000001-9', hora: '25:00', tipo: 'otro' });
+    const r = filaPlanillaSchema.safeParse({
+      ...filaOk,
+      rut: '1000001-9',
+      hora: '25:00',
+      tipo: 'otro',
+    });
     expect(r.success).toBe(false);
     if (!r.success) {
       const campos = r.error.issues.map((i) => i.path[0]);

@@ -125,11 +125,22 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 **Pendiente a futuro de S3:** cambiar el horario no reprograma lo que ya está en la cola (se aplica a los próximos envíos); confirmación de baja al paciente («no le escribiremos más») no se envía; reintento manual de mensajes fallidos desde la interfaz; la base legal para escribir por WhatsApp (consentimiento previo vs. interés legítimo en salud) debe definirla la Dirección de Salud (§7).
 
 ### S4 — Pendientes y llamadas
-- [ ] Cola de pendientes (`sin-respuesta` + `enviado` vencido) ordenada adulto mayor primero; al registrar, sale de la cola (D-06).
-- [ ] Registro de resultado: Confirmado / Recado / No ubicado / Cancelado, guarda `forma_contacto`, `usuario_id`, timestamp; Recado y No ubicado se distinguen (6.10).
-- [ ] Llamada entrante: búsqueda por RUT en pacientes cargados del centro, registro aunque no exista paciente (solo RUT), motivo + "Otros" obligatorio con detalle, observación; `Communication` FHIR.
-- [ ] Historial con filtros, búsqueda y paginación servidor.
-- [ ] Enmascarado de RUT/teléfono con revelación auditada.
+**Estado: completado y verificado de punta a punta** en el navegador (cola → panel de llamada → registro → llamada entrante → historial) contra Keycloak y Postgres reales. **370 pruebas** en total, 111 de integración contra PostgreSQL.
+
+- [x] **Cola de pendientes:** citas futuras en «Sin respuesta» o «Enviado» con la espera vencida (el barrido aún no las movió, y se muestran ya como «Sin respuesta»). **Adultos mayores primero** (RN-05), luego fecha y hora. Una cita con recado o «no ubicado» **sigue en la cola** con su número de intentos y el último resultado: nunca se cancela por no contestar (RN-01, verificado también en FHIR: `Appointment.status` sigue `booked`).
+- [x] **Registro del resultado:** Confirmado / Recado dejado / No ubicado / Cancelado. Cada intento queda guardado (cita, resultado, quién, cuándo, observación) y los estados finales guardan la forma de contacto «llamada». **Recado y No ubicado se distinguen** (corrige el hallazgo 6.10 del informe). «Cancelado» crea la tarea «liberar hora en AVIS». La transición es condicional: si dos funcionarias registran a la vez, una gana y la otra recibe 409 (probado en paralelo).
+- [x] **Panel de llamada:** contactos anteriores (WhatsApp y llamadas, con quién las hizo), los 4 resultados con atajos de teclado `1`–`4` y la advertencia «no escribas datos clínicos». Al registrar pasa solo a la siguiente paciente.
+- [x] **Revelación auditada:** el teléfono (o el RUT) completo solo se obtiene al pulsar «Mostrar», se oculta solo a los 30 s y se puede copiar. Cada revelación queda en la bitácora (`dato.revelar`: quién, cuándo y qué campo; nunca el valor).
+- [x] **Llamada entrante:** búsqueda por RUT entre los pacientes **con citas en ese centro** (uno que solo tiene citas en otro centro se trata como no encontrado); se registra aunque el paciente no esté cargado (queda solo con el RUT); motivo, con detalle obligatorio para «Otros»; observación; el servidor mide el tiempo del registro (**9 s** en la prueba real; meta < 30 s). Foco en el RUT, `Enter` busca, `Ctrl+Enter` registra.
+- [x] **Historial paginado en el servidor:** filtros por fechas (con los límites del día en **hora de Chile**, probados en 00:00:00 y 23:59:59), motivo, centro y búsqueda por RUT exacto o nombre. La funcionaria ve solo su centro; el encargado y el administrador, todos o uno.
+- [x] **FHIR:** `Communication` de llamadas (entrantes y salientes, medio «teléfono», sin observaciones) y búsqueda `Communication?patient=` que reúne WhatsApp y llamadas con alcance por centro y lectura auditada.
+
+**Decisiones tomadas en S4**
+- **La observación es texto libre y puede traer datos personales**, así que no se copia a la auditoría ni a FHIR; la interfaz advierte «sin datos clínicos» y está limitada a 500 caracteres.
+- **Registrar llamada sobre «Enviado» o «Sin enviar» está permitido** (la funcionaria puede llamar sin esperar el WhatsApp).
+- **El nombre de quien registró** sale de la tabla de usuarios, que se alimenta al ingresar al sistema.
+
+**Pendiente a futuro de S4:** exportar el historial a Excel (va con los reportes, S5); límite de intentos por cita o recordatorio de «volver a llamar a las…»; mostrar a la funcionaria cuántos pendientes tiene en el menú.
 
 ### S5 — Dashboard, reportes y configuración
 - [ ] Endpoints de agregación (vistas materializadas o consultas indexadas) por centro/período, zona America/Santiago.

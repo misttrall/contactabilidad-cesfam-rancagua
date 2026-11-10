@@ -314,3 +314,186 @@ export function useActualizarParametro() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['parametros'] }),
   });
 }
+
+// ----------------------------------------------------------------- Llamadas (S4)
+
+export type ResultadoLlamadaApi = 'confirmado' | 'recado' | 'no_ubicado' | 'cancelado';
+
+export interface FilaPendiente {
+  id: string;
+  pacienteId: string;
+  fecha: string;
+  hora: string;
+  paciente: string;
+  telefono: string | null;
+  profesional: string;
+  prestacion: string;
+  tipo: 'cronico' | 'morbilidad';
+  subestado: 'recado' | 'no_ubicado' | null;
+  vencida: boolean;
+  adultoMayor: boolean;
+  bajaWhatsApp: boolean;
+  intentos: number;
+  ultimoIntento: { resultado: ResultadoLlamadaApi; creadaEn: string } | null;
+}
+
+export interface ContactosCita {
+  estado: EstadoCitaApi;
+  subestado: 'recado' | 'no_ubicado' | null;
+  mensajes: { tipo: string; estado: string; enviadoEn: string | null; leidoEn: string | null }[];
+  llamadas: {
+    id: string;
+    resultado: ResultadoLlamadaApi;
+    observacion: string | null;
+    creadaEn: string;
+    registradoPor: string;
+  }[];
+}
+
+export const usePendientes = (centro: string) =>
+  useQuery({
+    queryKey: ['pendientes', centro],
+    queryFn: () =>
+      apiFetch<{ filas: FilaPendiente[] }>(
+        `/api/pendientes${centro ? `?centro=${encodeURIComponent(centro)}` : ''}`,
+      ),
+    enabled: centro !== '',
+    // Otras funcionarias también registran llamadas: la cola se mantiene al día.
+    refetchInterval: 30_000,
+  });
+
+export const useContactos = (citaId: string | null) =>
+  useQuery({
+    queryKey: ['contactos', citaId],
+    queryFn: () => apiFetch<ContactosCita>(`/api/pendientes/${citaId}/contactos`),
+    enabled: citaId !== null,
+  });
+
+export function useRegistrarResultado() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      citaId,
+      ...cuerpo
+    }: {
+      citaId: string;
+      resultado: ResultadoLlamadaApi;
+      observacion?: string;
+    }) =>
+      apiFetch<{ estado: string; liberarEnAvis: boolean }>(`/api/pendientes/${citaId}/resultado`, {
+        method: 'POST',
+        body: JSON.stringify(cuerpo),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['pendientes'] });
+      void qc.invalidateQueries({ queryKey: ['contactos'] });
+      void qc.invalidateQueries({ queryKey: ['liberaciones'] });
+    },
+  });
+}
+
+/** Pide el dato completo; cada llamada queda en la auditoría del servidor. */
+export const useRevelar = () =>
+  useMutation({
+    mutationFn: ({ pacienteId, campo }: { pacienteId: string; campo: 'telefono' | 'rut' }) =>
+      apiFetch<{ campo: string; valor: string | null }>(`/api/pacientes/${pacienteId}/revelar`, {
+        method: 'POST',
+        body: JSON.stringify({ campo }),
+      }),
+  });
+
+export interface Motivo2 {
+  id: string;
+  codigo: string;
+  descripcion: string;
+}
+export const useMotivos = () =>
+  useQuery({
+    queryKey: ['motivos'],
+    queryFn: () => apiFetch<Motivo2[]>('/api/motivos'),
+    staleTime: 5 * 60_000,
+  });
+
+export type BusquedaPaciente =
+  | { encontrado: false }
+  | {
+      encontrado: true;
+      paciente: {
+        id: string;
+        nombre: string;
+        edad: number | null;
+        adultoMayor: boolean;
+        telefono: string | null;
+      };
+      proximasCitas: { fecha: string; hora: string; profesional: string; estado: EstadoCitaApi }[];
+    };
+
+export const useBuscarPaciente = (rut: string | null, centro: string) =>
+  useQuery({
+    queryKey: ['paciente', rut, centro],
+    queryFn: () =>
+      apiFetch<BusquedaPaciente>(
+        `/api/pacientes/buscar?rut=${encodeURIComponent(rut ?? '')}${centro ? `&centro=${encodeURIComponent(centro)}` : ''}`,
+      ),
+    enabled: rut !== null && centro !== '',
+    staleTime: 0,
+    gcTime: 0,
+  });
+
+export function useRegistrarLlamadaEntrante() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (cuerpo: {
+      rut: string;
+      centro?: string;
+      motivoId: string;
+      otroMotivo?: string;
+      observacion?: string;
+      segundos?: number;
+    }) =>
+      apiFetch<{ id: string; pacienteEncontrado: boolean }>('/api/llamadas-entrantes', {
+        method: 'POST',
+        body: JSON.stringify(cuerpo),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['historial'] }),
+  });
+}
+
+export interface FiltrosHistorialUI {
+  centro: string;
+  desde: string;
+  hasta: string;
+  motivoId: string;
+  q: string;
+  pagina: number;
+  tam: number;
+}
+export interface FilaHistorial {
+  id: string;
+  creadaEn: string;
+  centro: string;
+  paciente: string | null;
+  rut: string;
+  motivo: string;
+  otroMotivo: string | null;
+  observacion: string | null;
+  registradoPor: string;
+  segundos: number | null;
+}
+export interface Historial {
+  total: number;
+  pagina: number;
+  tam: number;
+  paginas: number;
+  filas: FilaHistorial[];
+}
+
+export function useHistorialLlamadas(f: FiltrosHistorialUI) {
+  const q = new URLSearchParams();
+  for (const [k, v] of Object.entries(f)) if (v !== '' && v !== undefined) q.set(k, String(v));
+  return useQuery({
+    queryKey: ['historial', f],
+    queryFn: () => apiFetch<Historial>(`/api/llamadas-entrantes?${q}`),
+    placeholderData: (anterior) => anterior,
+  });
+}

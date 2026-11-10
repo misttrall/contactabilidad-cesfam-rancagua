@@ -11,6 +11,13 @@ import { CatalogosController } from './catalogos/catalogos.controller';
 import { CifradoService } from './cifrado/cifrado.service';
 import { cargarConfig, type Config } from './config';
 import { FhirController } from './fhir/fhir.controller';
+import { LlamadasEntrantesService } from './llamadas/llamadas-entrantes.service';
+import {
+  LlamadasEntrantesController,
+  PacientesController,
+  PendientesController,
+} from './llamadas/llamadas.controller';
+import { PendientesService } from './llamadas/pendientes.service';
 import { BarridoService } from './mensajeria/barrido.service';
 import type { CanalMensajeria } from './mensajeria/canal';
 import { CloudApiWhatsApp } from './mensajeria/cloud-api';
@@ -52,6 +59,9 @@ export class SaludController {
     ConfirmacionesController,
     ParametrosController,
     WebhookController,
+    PendientesController,
+    PacientesController,
+    LlamadasEntrantesController,
   ],
   providers: [
     { provide: CONFIG, useFactory: () => cargarConfig() },
@@ -100,6 +110,8 @@ export class SaludController {
     WebhookService,
     SimulacionService,
     BarridoService,
+    PendientesService,
+    LlamadasEntrantesService,
     // Orden importa: primero autenticación, luego autorización por módulo.
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: ModuloGuard },

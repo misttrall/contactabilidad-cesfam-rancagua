@@ -14,6 +14,7 @@ import {
   CODESYSTEMS_ESTATICOS,
   bundleSearchset,
   citaAFhir,
+  llamadaAFhir,
   liberacionAFhir,
   mensajeAFhir,
   respuestaCitaAFhir,
@@ -304,13 +305,85 @@ export class FhirController {
   @Get('Communication')
   @RequiereModulo('pendientes')
   @Header('Content-Type', FHIR_JSON)
-  async comunicaciones(@Sesion() s: SesionUsuario, @Query('appointment') appointment?: string) {
+  async comunicaciones(
+    @Sesion() s: SesionUsuario,
+    @Req() req: RequestConSesion,
+    @Query('appointment') appointment?: string,
+    @Query('patient') patient?: string,
+  ) {
+    if (patient) return this.comunicacionesDePaciente(s, patient, req.ip);
     const cita = await this.citaDeBusqueda(s, appointment);
     const mensajes = await this.prisma.mensaje.findMany({
       where: { citaId: cita.id },
       orderBy: { creadoEn: 'asc' },
     });
     return bundleSearchset(mensajes.map(mensajeAFhir), this.base);
+  }
+
+  /**
+   * Todo el contacto con un paciente: mensajes de WhatsApp y llamadas (entrantes y salientes),
+   * limitado a los centros del usuario. Leerlo queda auditado, como leer al paciente.
+   */
+  private async comunicacionesDePaciente(s: SesionUsuario, valor: string, ip?: string) {
+    const id = valor.split('/').at(-1) ?? '';
+    if (!ID_UUID.test(id)) {
+      throw new BadRequestException(
+        operationOutcome(
+          'error',
+          'invalid',
+          'patient debe ser un id: ?patient=<id> o Patient/<id>',
+        ),
+      );
+    }
+    const centros = (await this.centrosVisibles(s)).map((c) => c.id);
+    const visible = await this.prisma.paciente.findFirst({
+      where: { id, citas: { some: { centroId: { in: centros } } } },
+      select: { id: true },
+    });
+    if (!visible) throw this.noEncontrado('Patient', id);
+    await this.auditarLecturaPaciente(s, id, ip);
+
+    const [mensajes, entrantes, salientes] = await Promise.all([
+      this.prisma.mensaje.findMany({
+        where: { pacienteId: id, cita: { centroId: { in: centros } } },
+        orderBy: { creadoEn: 'asc' },
+      }),
+      this.prisma.llamadaEntrante.findMany({
+        where: { pacienteId: id, centroId: { in: centros } },
+        include: { motivo: { select: { codigo: true } } },
+        orderBy: { creadaEn: 'asc' },
+      }),
+      this.prisma.llamadaSaliente.findMany({
+        where: { cita: { pacienteId: id, centroId: { in: centros } } },
+        include: { cita: { select: { centroId: true } } },
+        orderBy: { creadaEn: 'asc' },
+      }),
+    ]);
+    const recursos = [
+      ...mensajes.map(mensajeAFhir),
+      ...entrantes.map((l) =>
+        llamadaAFhir({
+          id: l.id,
+          direccion: 'entrante',
+          centroId: l.centroId,
+          pacienteId: id,
+          codigo: l.motivo.codigo,
+          creadaEn: l.creadaEn,
+        }),
+      ),
+      ...salientes.map((l) =>
+        llamadaAFhir({
+          id: l.id,
+          direccion: 'saliente',
+          centroId: l.cita.centroId,
+          pacienteId: id,
+          citaId: l.citaId,
+          codigo: l.resultado,
+          creadaEn: l.creadaEn,
+        }),
+      ),
+    ];
+    return bundleSearchset(recursos, this.base);
   }
 
   @Get('AppointmentResponse')

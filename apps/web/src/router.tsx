@@ -14,7 +14,10 @@ import { ConfirmacionMasiva } from './paginas/ConfirmacionMasiva';
 import { ConAcceso } from './paginas/ConAcceso';
 import { Diseno } from './paginas/Diseno';
 import { EnConstruccion } from './paginas/EnConstruccion';
+import { Historial } from './paginas/Historial';
 import { Inicio } from './paginas/Inicio';
+import { LlamadaEntrante } from './paginas/LlamadaEntrante';
+import { Pendientes } from './paginas/Pendientes';
 
 const raiz = createRootRoute({ component: Shell });
 
@@ -29,11 +32,9 @@ const rutas = [
   protegida('/', 'dashboard', () => <Inicio />),
   protegida('/cargas', 'cargar_citas', () => <Cargas />),
   protegida('/confirmaciones', 'confirmacion_masiva', () => <ConfirmacionMasiva />),
-  protegida('/pendientes', 'pendientes', () => <EnConstruccion modulo="pendientes" />),
-  protegida('/llamadas/nueva', 'llamada_entrante', () => (
-    <EnConstruccion modulo="llamada_entrante" />
-  )),
-  protegida('/llamadas', 'historial', () => <EnConstruccion modulo="historial" />),
+  protegida('/pendientes', 'pendientes', () => <Pendientes />),
+  protegida('/llamadas/nueva', 'llamada_entrante', () => <LlamadaEntrante />),
+  protegida('/llamadas', 'historial', () => <Historial />),
   protegida('/reportes', 'reportes', () => <EnConstruccion modulo="reportes" />),
   protegida('/configuracion', 'configuracion', () => <Configuracion />),
   // El catálogo de diseño no existe en producción.

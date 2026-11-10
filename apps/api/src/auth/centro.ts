@@ -31,3 +31,20 @@ export async function centroIdDeAlcance(
   if (!c) throw new NotFoundException('Centro no encontrado');
   return c.id;
 }
+
+/**
+ * Centro al que se limita una consulta, o null si el usuario puede ver todos.
+ * Con `codigo` valida el acceso (la funcionaria solo al suyo).
+ */
+export async function centroIdOpcional(
+  prisma: PrismaService,
+  sesion: SesionUsuario,
+  codigo?: string,
+): Promise<string | null> {
+  const alcance = resolverAlcance(sesion, codigo);
+  if (alcance.tipo === 'prohibido') throw new ForbiddenException(alcance.motivo);
+  if (alcance.tipo === 'todos') return null;
+  const c = await prisma.centro.findUnique({ where: { codigo: alcance.centroId } });
+  if (!c) throw new NotFoundException('Centro no encontrado');
+  return c.id;
+}

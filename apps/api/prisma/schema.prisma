@@ -19,16 +19,17 @@ enum Rol {
 
 /// Cesfam. Se identifica en el token de Keycloak por `codigo` (claim centro_id).
 model Centro {
-  id            String        @id @default(uuid()) @db.Uuid
-  codigo        String        @unique
-  nombre        String
-  activo        Boolean       @default(true)
-  creadoEn      DateTime      @default(now()) @db.Timestamptz(6)
-  usuarios      Usuario[]
-  profesionales Profesional[]
-  citas         Cita[]
-  cargas        Carga[]
-  envios        Envio[]
+  id                String            @id @default(uuid()) @db.Uuid
+  codigo            String            @unique
+  nombre            String
+  activo            Boolean           @default(true)
+  creadoEn          DateTime          @default(now()) @db.Timestamptz(6)
+  usuarios          Usuario[]
+  profesionales     Profesional[]
+  citas             Cita[]
+  cargas            Carga[]
+  envios            Envio[]
+  llamadasEntrantes LlamadaEntrante[]
 
   @@map("centro")
 }
@@ -65,11 +66,12 @@ model Profesional {
 
 /// Catálogo de motivos de llamada entrante (informe 4.1, tabla 11).
 model MotivoLlamada {
-  id          String  @id @default(uuid()) @db.Uuid
-  codigo      String  @unique
+  id          String            @id @default(uuid()) @db.Uuid
+  codigo      String            @unique
   descripcion String
-  orden       Int     @default(0)
-  activo      Boolean @default(true)
+  orden       Int               @default(0)
+  activo      Boolean           @default(true)
+  llamadas    LlamadaEntrante[]
 
   @@map("motivo_llamada")
 }
@@ -133,49 +135,51 @@ enum SexoPaciente {
 /// Datos de contacto del paciente. RUT único. El teléfono se guarda cifrado a nivel de aplicación
 /// (AES-256-GCM); el resto depende del cifrado en reposo del disco/BD (S6).
 model Paciente {
-  id              String           @id @default(uuid()) @db.Uuid
-  rut             String           @unique
-  nombre          String
-  telefonoCifrado String?
+  id                String            @id @default(uuid()) @db.Uuid
+  rut               String            @unique
+  nombre            String
+  telefonoCifrado   String?
   /// HMAC del teléfono: permite ubicar al paciente que responde por WhatsApp sin descifrar la tabla.
-  telefonoHash    String?
+  telefonoHash      String?
   /// El paciente pidió no recibir más mensajes por WhatsApp (se le llama por teléfono).
-  whatsappBaja    Boolean          @default(false)
-  whatsappBajaEn  DateTime?        @db.Timestamptz(6)
-  fechaNacimiento DateTime?        @db.Date
-  sexo            SexoPaciente?
-  creadoEn        DateTime         @default(now()) @db.Timestamptz(6)
-  actualizadoEn   DateTime         @updatedAt @db.Timestamptz(6)
-  citas           Cita[]
-  mensajes        Mensaje[]
-  consentimientos Consentimiento[]
+  whatsappBaja      Boolean           @default(false)
+  whatsappBajaEn    DateTime?         @db.Timestamptz(6)
+  fechaNacimiento   DateTime?         @db.Date
+  sexo              SexoPaciente?
+  creadoEn          DateTime          @default(now()) @db.Timestamptz(6)
+  actualizadoEn     DateTime          @updatedAt @db.Timestamptz(6)
+  citas             Cita[]
+  mensajes          Mensaje[]
+  consentimientos   Consentimiento[]
+  llamadasEntrantes LlamadaEntrante[]
 
   @@index([telefonoHash])
   @@map("paciente")
 }
 
 model Cita {
-  id                String         @id @default(uuid()) @db.Uuid
-  centroId          String         @db.Uuid
-  centro            Centro         @relation(fields: [centroId], references: [id])
-  pacienteId        String         @db.Uuid
-  paciente          Paciente       @relation(fields: [pacienteId], references: [id])
-  profesionalId     String?        @db.Uuid
-  profesional       Profesional?   @relation(fields: [profesionalId], references: [id])
+  id                String            @id @default(uuid()) @db.Uuid
+  centroId          String            @db.Uuid
+  centro            Centro            @relation(fields: [centroId], references: [id])
+  pacienteId        String            @db.Uuid
+  paciente          Paciente          @relation(fields: [pacienteId], references: [id])
+  profesionalId     String?           @db.Uuid
+  profesional       Profesional?      @relation(fields: [profesionalId], references: [id])
   /// Texto tal como viene de AVIS (el profesional puede no existir aún en el catálogo).
   profesionalNombre String
   /// Versión normalizada (sin tildes, minúsculas) para la clave de idempotencia.
   profesionalClave  String
-  fecha             DateTime       @db.Date
+  fecha             DateTime          @db.Date
   hora              String
   prestacion        String
   tipo              TipoCita
-  cargaId           String         @db.Uuid
-  carga             Carga          @relation(fields: [cargaId], references: [id])
-  creadoEn          DateTime       @default(now()) @db.Timestamptz(6)
+  cargaId           String            @db.Uuid
+  carga             Carga             @relation(fields: [cargaId], references: [id])
+  creadoEn          DateTime          @default(now()) @db.Timestamptz(6)
   tarea             TareaContacto?
   mensajes          Mensaje[]
   liberacion        Liberacion?
+  llamadas          LlamadaSaliente[]
 
   /// Recargar la misma planilla no duplica citas.
   @@unique([centroId, pacienteId, fecha, hora, profesionalClave])
@@ -337,4 +341,56 @@ model Consentimiento {
 
   @@index([pacienteId])
   @@map("consentimiento")
+}
+
+// ============================================================================ S4: llamadas
+
+/// Resultado de una llamada saliente a un paciente pendiente. Recado y No ubicado se distinguen
+/// (el prototipo los mezclaba) pero ambos dejan la cita en «sin_respuesta»: NUNCA se cancela (RN-01).
+enum ResultadoLlamada {
+  confirmado
+  recado
+  no_ubicado
+  cancelado
+}
+
+/// Cada intento de contacto telefónico queda registrado (historial por cita).
+model LlamadaSaliente {
+  id          String           @id @default(uuid()) @db.Uuid
+  citaId      String           @db.Uuid
+  cita        Cita             @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  resultado   ResultadoLlamada
+  /// Texto libre de la funcionaria. La interfaz advierte: sin datos clínicos.
+  observacion String?
+  /// `sub` de Keycloak de quien llamó.
+  usuarioId   String
+  creadaEn    DateTime         @default(now()) @db.Timestamptz(6)
+
+  @@index([citaId, creadaEn])
+  @@index([usuarioId])
+  @@map("llamada_saliente")
+}
+
+/// Llamada que recibe el call center. `pacienteId` solo se enlaza si el paciente tiene citas en ese
+/// centro; si no, se registra únicamente el RUT (informe 7.10: registrar aunque no esté cargado).
+model LlamadaEntrante {
+  id          String        @id @default(uuid()) @db.Uuid
+  centroId    String        @db.Uuid
+  centro      Centro        @relation(fields: [centroId], references: [id])
+  pacienteId  String?       @db.Uuid
+  paciente    Paciente?     @relation(fields: [pacienteId], references: [id])
+  rut         String
+  motivoId    String        @db.Uuid
+  motivo      MotivoLlamada @relation(fields: [motivoId], references: [id])
+  otroMotivo  String?
+  observacion String?
+  usuarioId   String
+  /// Segundos que tardó el registro (métrica del piloto, meta < 30 s).
+  segundos    Int?
+  creadaEn    DateTime      @default(now()) @db.Timestamptz(6)
+
+  @@index([centroId, creadaEn])
+  @@index([rut])
+  @@index([motivoId])
+  @@map("llamada_entrante")
 }

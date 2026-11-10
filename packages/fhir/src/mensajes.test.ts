@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { bajaCanalAFhir, liberacionAFhir, mensajeAFhir, respuestaCitaAFhir } from './mensajes';
+import {
+  bajaCanalAFhir,
+  liberacionAFhir,
+  llamadaAFhir,
+  mensajeAFhir,
+  respuestaCitaAFhir,
+} from './mensajes';
 
 const t = new Date('2026-11-20T15:00:00Z');
 
@@ -60,5 +66,49 @@ describe('Consent (baja de WhatsApp)', () => {
     expect(c.status).toBe('inactive');
     expect(c.provision.type).toBe('deny');
     expect(c.patient.reference).toBe('Patient/p1');
+  });
+});
+
+describe('Communication de llamadas telefónicas', () => {
+  const base = { id: 'l1', centroId: 'c1', creadaEn: t };
+  it('entrante con paciente: el paciente es el remitente, el centro el destinatario y el motivo el tema', () => {
+    const c = llamadaAFhir({
+      ...base,
+      direccion: 'entrante',
+      pacienteId: 'p1',
+      codigo: 'SOL_HORA',
+    });
+    expect(c.sender.reference).toBe('Patient/p1');
+    expect(c.recipient[0]?.reference).toBe('Organization/c1');
+    expect(c.subject?.reference).toBe('Patient/p1');
+    expect(c.topic.coding[0]).toMatchObject({ code: 'SOL_HORA' });
+    expect(c.topic.coding[0]?.system).toContain('motivo-llamada');
+    expect(c.medium[0]?.coding[0]?.code).toBe('telefono');
+    expect(c.received).toBe(t.toISOString());
+    expect(c.sent).toBeUndefined();
+  });
+  it('entrante sin paciente cargado: no hay subject (solo se sabía el RUT, que no se expone)', () => {
+    const c = llamadaAFhir({ ...base, direccion: 'entrante', codigo: 'OTROS' });
+    expect(c.subject).toBeUndefined();
+    expect(JSON.stringify(c)).not.toMatch(/Patient\//);
+  });
+  it('saliente: el centro es el remitente, enlaza la cita y usa el código del resultado', () => {
+    const c = llamadaAFhir({
+      ...base,
+      direccion: 'saliente',
+      pacienteId: 'p1',
+      citaId: 'a1',
+      codigo: 'recado',
+    });
+    expect(c.sender.reference).toBe('Organization/c1');
+    expect(c.recipient[0]?.reference).toBe('Patient/p1');
+    expect(c.about?.[0]?.reference).toBe('Appointment/a1');
+    expect(c.topic.coding[0]?.system).toContain('resultado-llamada');
+    expect(c.sent).toBe(t.toISOString());
+  });
+  it('no incluye observaciones ni texto libre', () => {
+    const c = llamadaAFhir({ ...base, direccion: 'saliente', pacienteId: 'p1', codigo: 'recado' });
+    expect(Object.keys(c)).not.toContain('payload');
+    expect(Object.keys(c)).not.toContain('note');
   });
 });

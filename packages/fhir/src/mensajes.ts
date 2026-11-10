@@ -1,4 +1,4 @@
-import { BASE_LOCAL } from './sistemas';
+import { BASE_LOCAL, LOCAL_MOTIVO_LLAMADA, LOCAL_RESULTADO_LLAMADA } from './sistemas';
 
 /**
  * Mapeo de la mensajería (S3) a FHIR R4. Ver ADR-001 §2.4:
@@ -160,5 +160,59 @@ export function bajaCanalAFhir(c: {
       type: 'deny',
       purpose: [{ system: LOCAL_MEDIO_CONTACTO, code: 'whatsapp' }],
     },
+  };
+}
+
+// ---------------------------------------------------------------------- llamadas telefónicas (S4)
+
+export interface FhirCommunicationLlamada {
+  resourceType: 'Communication';
+  id: string;
+  status: 'completed';
+  medium: { coding: { system: string; code: string; display: string }[] }[];
+  topic: { coding: { system: string; code: string }[] };
+  subject?: { reference: string };
+  sender: { reference: string };
+  recipient: { reference: string }[];
+  about?: { reference: string }[];
+  sent?: string;
+  received?: string;
+}
+
+export interface LlamadaDominio {
+  id: string;
+  direccion: 'entrante' | 'saliente';
+  centroId: string;
+  pacienteId?: string | null | undefined;
+  /** Solo en llamadas salientes: la cita que se intentaba confirmar. */
+  citaId?: string | null | undefined;
+  /** Código del motivo (entrante) o del resultado (saliente). */
+  codigo: string;
+  creadaEn: Date;
+}
+
+/**
+ * Llamada telefónica como Communication. Entrante: el paciente es el remitente y el centro el
+ * destinatario; saliente, al revés. Una entrante sin paciente cargado no lleva `subject`.
+ * No incluye observaciones (texto libre que podría contener datos personales).
+ */
+export function llamadaAFhir(l: LlamadaDominio): FhirCommunicationLlamada {
+  const centro = { reference: `Organization/${l.centroId}` };
+  const paciente = l.pacienteId ? { reference: `Patient/${l.pacienteId}` } : undefined;
+  const entrante = l.direccion === 'entrante';
+  const sistema = entrante ? LOCAL_MOTIVO_LLAMADA : LOCAL_RESULTADO_LLAMADA;
+  const instante = l.creadaEn.toISOString();
+  return {
+    resourceType: 'Communication',
+    id: l.id,
+    status: 'completed',
+    medium: [{ coding: [{ system: LOCAL_MEDIO_CONTACTO, code: 'telefono', display: 'Teléfono' }] }],
+    topic: { coding: [{ system: sistema, code: l.codigo }] },
+    ...(paciente ? { subject: paciente } : {}),
+    // Sin paciente identificado, el remitente de una llamada entrante es desconocido: se omite.
+    sender: entrante ? (paciente ?? centro) : centro,
+    recipient: entrante ? [centro] : paciente ? [paciente] : [],
+    ...(l.citaId ? { about: [{ reference: `Appointment/${l.citaId}` }] } : {}),
+    ...(entrante ? { received: instante } : { sent: instante }),
   };
 }

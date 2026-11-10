@@ -97,9 +97,9 @@ describe('Control de acceso en la web', () => {
   });
 
   it('un módulo pendiente de construir muestra el sprint en que llega', async () => {
-    respuestas['/api/me'] = me('funcionaria', true);
-    montar('/pendientes');
-    expect(await screen.findByText(/Sprint 4/)).toBeTruthy();
+    respuestas['/api/me'] = me('encargado', false);
+    montar('/reportes');
+    expect(await screen.findByText(/Sprint 5/)).toBeTruthy();
   });
 });
 

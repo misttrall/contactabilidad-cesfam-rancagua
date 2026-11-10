@@ -99,13 +99,30 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 **Pendiente a futuro de S2:** edad o fecha de nacimiento en la exportación de AVIS (sin ella no se puede priorizar a adultos mayores en S4); confirmar si AVIS repite el RUT con formato distinto; límite de tasa en la carga (S6).
 
 ### S3 — Confirmación masiva por WhatsApp
-- [ ] Interfaz `CanalMensajeria` con dos implementaciones: `SimuladorWhatsApp` (demo, incluye "Simular respuestas" — RF-11) y `WhatsAppCloudApi`.
-- [ ] Plantilla de utilidad aprobada en Meta con botones de respuesta rápida **Sí / No**, fecha explícita y nombre del Cesfam, **sin prestación sensible** (resuelve la inconsistencia "Mañana…" vs "1 mes de anticipación" de 9.3; anticipación parametrizable).
-- [ ] Cola BullMQ: lotes, límite de tasa, reintentos con backoff, ventana horaria de envío, deduplicación.
-- [ ] Webhook firmado (verificación `X-Hub-Signature-256`): estados sent/delivered/read/failed → `Communication`; respuesta → `AppointmentResponse` (`accepted`/`declined`) y Task `confirmado`/`cancelado`.
-- [ ] Expiración: sin respuesta tras N horas → Task `sin-respuesta` (nunca cancela, RN-01). Segundo mensaje opcional a ≥ 65 años (RN-11).
-- [ ] Respuesta "No": tarea visible "Liberar hora en AVIS" + mensaje de reagendamiento (Hora Fácil / canal del Cesfam).
-- [ ] Registro de `Consent` del canal y opción de baja ("no deseo recibir mensajes").
+**Estado: completado y verificado de punta a punta** con Redis y Postgres reales (carga → envío por la cola BullMQ → respuestas simuladas → tabla de estados → liberaciones). 286 pruebas, de ellas 69 de integración contra PostgreSQL y 8 contra Redis.
+
+> **Lo que NO se pudo verificar sin credenciales de Meta:** el envío real por la Cloud API y la aprobación de las plantillas. El cliente está probado contra respuestas simuladas (formato de la solicitud y clasificación de errores). Para el piloto hay que: crear la app en Meta Business, **verificar el negocio y aprobar las plantillas** `confirmacion_hora_v1` y `recordatorio_hora_v1` (cuerpo con 3 parámetros: centro, fecha y hora, y dos botones de respuesta rápida) y registrar el webhook. Es un trámite que puede tardar: conviene iniciarlo ya.
+
+- [x] **Canal intercambiable** (`CanalMensajeria`): `SimuladorWhatsApp` para la demo y `CloudApiWhatsApp` (WhatsApp Business Platform). En PRODUCCIÓN solo se admite `cloud`, con sus cuatro credenciales obligatorias. Errores 4xx → permanentes; 429, 5xx y fallas de red → transitorios (se reintentan).
+- [x] **Plantillas sin datos personales ni clínicos:** el mensaje lleva solo el centro, la fecha y la hora (sin nombre, profesional ni prestación, que podría revelar un diagnóstico). Resuelve la inconsistencia «Mañana…» vs «1 mes» de 9.3: la anticipación es un parámetro (`envio.anticipacion_horas`) y la fecha va explícita.
+- [x] **Cola BullMQ (Redis):** lotes, límite de tasa configurable, reintentos con espera exponencial (5 intentos), diferidos fuera del horario, deduplicación y continuidad tras un reinicio (probado). En desarrollo sin `REDIS_URL` corre una cola en memoria; fuera de DEMO Redis es obligatorio.
+- [x] **Horario de envío** (`envio.ventana_horaria`, hora de Chile): fuera de él los mensajes esperan al próximo inicio; el procesador lo vuelve a comprobar al enviar.
+- [x] **Nunca se envía dos veces** a la misma cita (unicidad cita+tipo en la base, probado con envíos en paralelo).
+- [x] **Webhook firmado:** `X-Hub-Signature-256` (HMAC-SHA256 sobre el cuerpo crudo, comparación en tiempo constante) y verificación GET. Estados de entrega (`sent/delivered/read/failed`) tolerantes al desorden; `failed` deja la cita para llamar. Respuestas **idempotentes** (Meta reintenta entregas) y solo se acepta la respuesta del teléfono al que se escribió.
+- [x] **Respuestas:** «Sí» → confirmada; «No» → cancelada + tarea **«Liberar hora en AVIS»** + mensaje de reagendamiento (texto configurable). Texto libre («Sí», «No puedo») se interpreta con prudencia y solo si ese teléfono tiene **una** cita esperando; lo ambiguo no se adivina. Una respuesta tardía a una cita ya en «Sin respuesta» sí se acepta.
+- [x] **Vencimientos** (`envio.horas_espera_respuesta`, barrido cada 5 min): sin respuesta → «Sin respuesta» y a la lista de llamadas, **nunca cancelada** (RN-01). A mitad de la espera, el adulto mayor recibe **un** recordatorio (`envio.segundo_mensaje_adulto_mayor`, RN-12).
+- [x] **Baja del canal:** «STOP», «baja» o «no quiero recibir más mensajes» registran la baja del número (todos los pacientes que lo comparten), un `Consentimiento` revocado, y sus citas pasan a llamada. No se confunde con un «No» a la cita.
+- [x] **FHIR:** `Communication` (estado del mensaje, sin contenido), `AppointmentResponse` (`accepted`/`declined`), `Task` de contacto y `Task` «liberar-hora-avis», y mapeo a `Consent`; búsquedas por cita con alcance por centro.
+- [x] **Web:** pantalla de confirmación masiva (filtros, selección que se limpia al cambiar de filtro, diálogo de confirmación con el texto exacto, seguimiento del avance, simulación de respuestas solo en demo, horas por liberar) y edición de los **parámetros de envío** por el administrador (cada cambio queda auditado).
+
+**Decisiones tomadas en S3**
+- **El estado de la agenda es de AVIS.** Un «No» no cancela la cita en este sistema: deja una tarea para que una persona libere la hora en AVIS y la marque aquí. La cita sigue `booked` en FHIR.
+- **Sin teléfono o con baja = directo a «Pendientes por llamar»**, sin pasar por WhatsApp.
+- **Entrega «al menos una vez»:** si WhatsApp acepta el mensaje y el proceso cae antes de guardarlo, un reintento podría duplicarlo (la Cloud API no tiene clave de idempotencia). Una respuesta `200` sin id de mensaje se trata como error permanente para no arriesgar duplicados.
+- **No se guarda el texto de los pacientes:** solo el resultado de interpretarlo.
+- **La simulación de respuestas** usa el mismo código del webhook real (no un atajo), con un reparto determinista; solo existe con `WHATSAPP_MODO=simulador` fuera de producción.
+
+**Pendiente a futuro de S3:** cambiar el horario no reprograma lo que ya está en la cola (se aplica a los próximos envíos); confirmación de baja al paciente («no le escribiremos más») no se envía; reintento manual de mensajes fallidos desde la interfaz; la base legal para escribir por WhatsApp (consentimiento previo vs. interés legítimo en salud) debe definirla la Dirección de Salud (§7).
 
 ### S4 — Pendientes y llamadas
 - [ ] Cola de pendientes (`sin-respuesta` + `enviado` vencido) ordenada adulto mayor primero; al registrar, sale de la cola (D-06).
@@ -161,6 +178,9 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 6. Puestos de trabajo: resolución, monitores, navegador (para calibrar la skill — `avis-referencia.md`).
 7. ¿La exportación de AVIS trae **edad o fecha de nacimiento** y **sexo**? (el lector ya acepta ambas como columnas opcionales; la prioridad de adultos mayores en S4 depende de esto).
 8. **Código DEIS** de cada Cesfam (CL Core identifica establecimientos por DEIS; hoy se usa un código local).
+9. **WhatsApp:** ¿un número por comuna o por Cesfam? Nombre visible del remitente, titular de la cuenta de Meta Business y quién tramita la verificación del negocio y la aprobación de las plantillas (bloqueante para el piloto).
+10. **Texto de reagendamiento:** ¿qué canales debe mencionar el mensaje cuando el paciente responde «No» (p. ej. Hora Fácil, Mi CHC, teléfono del Cesfam)? Hoy es un texto genérico editable en Configuración.
+11. **Base legal para escribir por WhatsApp** (Ley 21.719): consentimiento previo del paciente o interés legítimo en salud; definir con la Dirección de Salud antes de usar datos reales.
 
 ## 8. Próximo paso inmediato
 

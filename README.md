@@ -54,8 +54,21 @@ Las pruebas de importación, idempotencia y concurrencia corren contra una base 
 ```bash
 docker compose exec -T postgres psql -U businesshub -d postgres -c "CREATE DATABASE businesshub_test"
 DATABASE_URL=postgresql://businesshub:businesshub@localhost:5432/businesshub_test pnpm --filter @bh/api db:migrate
-TEST_DATABASE_URL=postgresql://businesshub:businesshub@localhost:5432/businesshub_test pnpm turbo run test
+TEST_DATABASE_URL=postgresql://businesshub:businesshub@localhost:5432/businesshub_test \
+TEST_REDIS_URL=redis://localhost:6379 pnpm turbo run test
 ```
+
+`TEST_REDIS_URL` activa las pruebas de la cola BullMQ contra un Redis real (reintentos, diferidos, límite de tasa, reinicio). Igual que la base de datos, el CI las exige.
+
+## Confirmación por WhatsApp
+
+Por defecto corre en modo `simulador` (no sale nada a internet): en **Confirmación masiva** hay un botón para simular las respuestas de los pacientes, que pasan por el mismo código que el webhook real. Para usar la cola real:
+
+```bash
+docker compose up -d redis            # y REDIS_URL=redis://localhost:6379 en apps/api/.env
+```
+
+Con `WHATSAPP_MODO=cloud` (WhatsApp Business Platform) hacen falta `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_APP_SECRET` y `WHATSAPP_VERIFY_TOKEN`, y registrar en Meta el webhook `POST /webhooks/whatsapp` (verificación `GET` con el token). El horario de envío, las esperas y los límites se editan en **Configuración → Parámetros de envío**.
 
 ## Cargar una planilla
 

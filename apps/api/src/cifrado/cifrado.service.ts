@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { Config } from '../config';
 import { CONFIG } from '../tokens';
@@ -33,5 +33,14 @@ export class CifradoService {
     const d = createDecipheriv('aes-256-gcm', this.config.claveDatos, Buffer.from(iv, 'base64'));
     d.setAuthTag(Buffer.from(tag, 'base64'));
     return Buffer.concat([d.update(Buffer.from(ct, 'base64')), d.final()]).toString('utf8');
+  }
+
+  /**
+   * Huella determinista para BUSCAR sin descifrar (p. ej. ubicar al paciente que responde desde un
+   * teléfono). HMAC-SHA256 con una clave derivada: sin la clave no se puede invertir ni adivinar.
+   */
+  hashBusqueda(texto: string): string {
+    const clave = Buffer.from(hkdfSync('sha256', this.config.claveDatos, '', 'bh-busqueda-v1', 32));
+    return createHmac('sha256', clave).update(texto).digest('hex');
   }
 }

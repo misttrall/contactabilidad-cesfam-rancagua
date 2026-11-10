@@ -306,6 +306,7 @@ export class CargasService {
           rut,
           nombre: f.paciente,
           telefonoCifrado: this.cifrado.cifrar(f.telefono),
+          telefonoHash: this.cifrado.hashBusqueda(f.telefono),
           ...(f.fechaNacimiento ? { fechaNacimiento: fechaDate(f.fechaNacimiento) } : {}),
           ...(f.sexo ? { sexo: f.sexo } : {}),
         });
@@ -317,7 +318,10 @@ export class CargasService {
         : null;
       const cambios: Prisma.PacienteUpdateInput = {};
       if (actual.nombre !== f.paciente) cambios.nombre = f.paciente;
-      if (telefonoActual !== f.telefono) cambios.telefonoCifrado = this.cifrado.cifrar(f.telefono);
+      if (telefonoActual !== f.telefono || !actual.telefonoHash) {
+        cambios.telefonoCifrado = this.cifrado.cifrar(f.telefono);
+        cambios.telefonoHash = this.cifrado.hashBusqueda(f.telefono);
+      }
       if (
         f.fechaNacimiento &&
         actual.fechaNacimiento?.toISOString().slice(0, 10) !== f.fechaNacimiento

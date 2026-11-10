@@ -6,3 +6,5 @@ allowBuilds:
   prisma: true
   "@prisma/client": true
   "@prisma/engines": true
+  # Acelerador nativo opcional de BullMQ: no se necesita.
+  msgpackr-extract: false

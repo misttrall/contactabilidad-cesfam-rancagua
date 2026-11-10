@@ -1,5 +1,6 @@
 import { CircleCheck, CircleSlash } from 'lucide-react';
 import { useActualizarMotivo, useCentros, useMotivosAdmin } from '../api/consultas';
+import { Parametros } from './Parametros';
 
 function EstadoActivo({ activo }: { activo: boolean }) {
   // Texto + ícono (no solo color), según la skill de diseño.
@@ -99,6 +100,7 @@ export function Configuracion() {
           </tbody>
         </table>
       )}
+      <Parametros />
     </section>
   );
 }

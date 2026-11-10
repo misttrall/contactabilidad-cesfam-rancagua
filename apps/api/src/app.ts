@@ -20,6 +20,9 @@ export function configurarApp(app: INestApplication): INestApplication {
 }
 
 export async function crearApp(): Promise<INestApplication> {
-  const app = await NestFactory.create(AppModule, { logger: ['error', 'warn', 'log'] });
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log'],
+    rawBody: true,
+  });
   return configurarApp(app);
 }

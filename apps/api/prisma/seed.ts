@@ -18,6 +18,9 @@ const PARAMETROS = {
   'envio.ventana_horaria': { desde: '09:00', hasta: '18:00' },
   'envio.horas_espera_respuesta': 24,
   'envio.segundo_mensaje_adulto_mayor': true,
+  'envio.limite_por_segundo': 10,
+  'mensajes.reagendamiento_info':
+    'Para reagendar su hora comuníquese con su Cesfam o use los canales de reagendamiento disponibles.',
   'carga.excluir_morbilidad_por_defecto': true,
 };
 

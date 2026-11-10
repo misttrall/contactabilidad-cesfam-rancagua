@@ -122,10 +122,19 @@ describe('Bundle transaction de una carga', () => {
 });
 
 describe('CapabilityStatement', () => {
-  it('declara Appointment y Patient, pero no recursos aún no implementados', () => {
+  it('declara lo implementado, pero no recursos aún no implementados', () => {
     const tipos = RECURSOS_SOPORTADOS.map((r) => r.type);
-    expect(tipos).toEqual(expect.arrayContaining(['Appointment', 'Patient', 'Organization']));
-    expect(tipos).not.toContain('Task');
-    expect(tipos).not.toContain('AppointmentResponse');
+    expect(tipos).toEqual(
+      expect.arrayContaining([
+        'Appointment',
+        'Patient',
+        'Organization',
+        'Task',
+        'Communication',
+        'AppointmentResponse',
+      ]),
+    );
+    expect(tipos).not.toContain('CommunicationRequest');
+    expect(tipos).not.toContain('Consent');
   });
 });

@@ -5,3 +5,4 @@ export * from './semillas';
 export * from './permisos';
 export * from './fechas';
 export * from './planilla';
+export * from './mensajeria';

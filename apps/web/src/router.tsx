@@ -10,6 +10,7 @@ import { config } from './config';
 import { Shell } from './Shell';
 import { Cargas } from './paginas/Cargas';
 import { Configuracion } from './paginas/Configuracion';
+import { ConfirmacionMasiva } from './paginas/ConfirmacionMasiva';
 import { ConAcceso } from './paginas/ConAcceso';
 import { Diseno } from './paginas/Diseno';
 import { EnConstruccion } from './paginas/EnConstruccion';
@@ -27,9 +28,7 @@ const protegida = (path: string, modulo: Modulo, pagina: () => React.ReactElemen
 const rutas = [
   protegida('/', 'dashboard', () => <Inicio />),
   protegida('/cargas', 'cargar_citas', () => <Cargas />),
-  protegida('/confirmaciones', 'confirmacion_masiva', () => (
-    <EnConstruccion modulo="confirmacion_masiva" />
-  )),
+  protegida('/confirmaciones', 'confirmacion_masiva', () => <ConfirmacionMasiva />),
   protegida('/pendientes', 'pendientes', () => <EnConstruccion modulo="pendientes" />),
   protegida('/llamadas/nueva', 'llamada_entrante', () => (
     <EnConstruccion modulo="llamada_entrante" />

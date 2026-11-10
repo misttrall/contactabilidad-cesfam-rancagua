@@ -255,6 +255,18 @@ describe('API: autenticación y autorización', () => {
 });
 
 const CLAVE = Buffer.alloc(32, 7).toString('base64');
+/** Entorno mínimo válido de PRODUCCION. */
+const PROD = {
+  AMBIENTE: 'PRODUCCION',
+  KEYCLOAK_ISSUER: 'https://kc/realms/x',
+  DATA_ENCRYPTION_KEY: CLAVE,
+  REDIS_URL: 'redis://redis:6379',
+  WHATSAPP_MODO: 'cloud',
+  WHATSAPP_TOKEN: 't',
+  WHATSAPP_PHONE_NUMBER_ID: '1',
+  WHATSAPP_APP_SECRET: 's',
+  WHATSAPP_VERIFY_TOKEN: 'v',
+};
 
 describe('cargarConfig', () => {
   it('usa DEMO por defecto y rechaza valores inválidos', () => {
@@ -263,20 +275,24 @@ describe('cargarConfig', () => {
     expect(() => cargarConfig({ API_PORT: 'abc' })).toThrow(/API_PORT/);
   });
   it('en PRODUCCION exige https en el emisor de Keycloak', () => {
-    expect(() =>
-      cargarConfig({
-        AMBIENTE: 'PRODUCCION',
-        KEYCLOAK_ISSUER: 'http://kc/realms/x',
-        DATA_ENCRYPTION_KEY: CLAVE,
-      }),
-    ).toThrow(/https/);
-    expect(
-      cargarConfig({
-        AMBIENTE: 'PRODUCCION',
-        KEYCLOAK_ISSUER: 'https://kc/realms/x',
-        DATA_ENCRYPTION_KEY: CLAVE,
-      }).keycloak.issuer,
-    ).toBe('https://kc/realms/x');
+    expect(() => cargarConfig({ ...PROD, KEYCLOAK_ISSUER: 'http://kc/realms/x' })).toThrow(/https/);
+    expect(cargarConfig(PROD).keycloak.issuer).toBe('https://kc/realms/x');
+  });
+  it('en PRODUCCION exige WhatsApp real (no el simulador) con todas sus credenciales', () => {
+    const { WHATSAPP_MODO: _m, ...sinModo } = PROD;
+    expect(() => cargarConfig(sinModo)).toThrow(/WHATSAPP_MODO debe ser cloud/);
+    expect(() => cargarConfig({ ...PROD, WHATSAPP_APP_SECRET: '' })).toThrow(/appSecret/);
+    expect(() => cargarConfig({ ...PROD, WHATSAPP_VERIFY_TOKEN: '' })).toThrow(/verifyToken/);
+  });
+  it('fuera de DEMO exige Redis: la cola de envíos debe ser persistente', () => {
+    expect(() => cargarConfig({ ...PROD, REDIS_URL: '' })).toThrow(/REDIS_URL/);
+    expect(() => cargarConfig({ AMBIENTE: 'QA', DATA_ENCRYPTION_KEY: CLAVE })).toThrow(/REDIS_URL/);
+  });
+  it('WHATSAPP_MODO solo admite simulador o cloud', () => {
+    expect(() => cargarConfig({ WHATSAPP_MODO: 'otro' })).toThrow(/WHATSAPP_MODO inválido/);
+    expect(cargarConfig({}).whatsapp.modo).toBe('simulador');
+    expect(cargarConfig({ BARRIDO_INTERVALO_MS: '0' }).barridoMs).toBe(0);
+    expect(() => cargarConfig({ BARRIDO_INTERVALO_MS: '-5' })).toThrow(/BARRIDO_INTERVALO_MS/);
   });
   it('deriva el JWKS del emisor salvo que se indique otro', () => {
     expect(cargarConfig({}).keycloak.jwksUrl).toMatch(/\/protocol\/openid-connect\/certs$/);

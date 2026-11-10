@@ -14,6 +14,10 @@ import {
   CODESYSTEMS_ESTATICOS,
   bundleSearchset,
   citaAFhir,
+  liberacionAFhir,
+  mensajeAFhir,
+  respuestaCitaAFhir,
+  tareaContactoAFhir,
   codeSystemMotivos,
   construirCapabilityStatement,
   operationOutcome,
@@ -268,6 +272,83 @@ export class FhirController {
     tipo: 'cronico' | 'morbilidad';
   }) {
     return { ...c, fecha: c.fecha.toISOString().slice(0, 10) };
+  }
+
+  // ---------------------------------------------------------------- Task, Communication, AppointmentResponse (S3)
+  // Búsquedas por cita: ?focus=Appointment/<id> (Task) o ?appointment=<id>. La cita debe ser visible
+  // para el usuario (su centro); si no, se responde como si no existiera.
+
+  /** Tarea de contacto de la cita y, si el paciente dijo «No», la tarea «liberar hora en AVIS». */
+  @Get('Task')
+  @RequiereModulo('pendientes')
+  @Header('Content-Type', FHIR_JSON)
+  async tareas(
+    @Sesion() s: SesionUsuario,
+    @Query('focus') focus?: string,
+    @Query('appointment') appointment?: string,
+  ) {
+    const cita = await this.citaDeBusqueda(s, focus ?? appointment);
+    const [contacto, liberacion] = await Promise.all([
+      this.prisma.tareaContacto.findUnique({ where: { citaId: cita.id } }),
+      this.prisma.liberacion.findUnique({ where: { citaId: cita.id } }),
+    ]);
+    const recursos = [
+      ...(contacto
+        ? [{ ...tareaContactoAFhir({ id: contacto.id, estado: contacto.estado }, cita.id) }]
+        : []),
+      ...(liberacion ? [liberacionAFhir(liberacion)] : []),
+    ];
+    return bundleSearchset(recursos, this.base);
+  }
+
+  @Get('Communication')
+  @RequiereModulo('pendientes')
+  @Header('Content-Type', FHIR_JSON)
+  async comunicaciones(@Sesion() s: SesionUsuario, @Query('appointment') appointment?: string) {
+    const cita = await this.citaDeBusqueda(s, appointment);
+    const mensajes = await this.prisma.mensaje.findMany({
+      where: { citaId: cita.id },
+      orderBy: { creadoEn: 'asc' },
+    });
+    return bundleSearchset(mensajes.map(mensajeAFhir), this.base);
+  }
+
+  @Get('AppointmentResponse')
+  @RequiereModulo('pendientes')
+  @Header('Content-Type', FHIR_JSON)
+  async respuestas(@Sesion() s: SesionUsuario, @Query('appointment') appointment?: string) {
+    const cita = await this.citaDeBusqueda(s, appointment);
+    const t = await this.prisma.tareaContacto.findUnique({ where: { citaId: cita.id } });
+    const recursos = t?.respuesta
+      ? [
+          respuestaCitaAFhir({
+            id: t.id,
+            citaId: cita.id,
+            pacienteId: cita.pacienteId,
+            respuesta: t.respuesta,
+            respondidoEn: t.respondidoEn,
+          }),
+        ]
+      : [];
+    return bundleSearchset(recursos, this.base);
+  }
+
+  /** Cita visible para el usuario a partir de `Appointment/<id>` o `<id>`. */
+  private async citaDeBusqueda(s: SesionUsuario, valor?: string) {
+    const id = valor?.split('/').at(-1) ?? '';
+    if (!ID_UUID.test(id)) {
+      throw new BadRequestException(
+        operationOutcome(
+          'error',
+          'required',
+          'Indica la cita: ?appointment=<id> (o ?focus=Appointment/<id>)',
+        ),
+      );
+    }
+    const centros = (await this.centrosVisibles(s)).map((c) => c.id);
+    const cita = await this.prisma.cita.findFirst({ where: { id, centroId: { in: centros } } });
+    if (!cita) throw this.noEncontrado('Appointment', id);
+    return cita;
   }
 
   // ---------------------------------------------------------------- helpers de alcance

@@ -28,6 +28,7 @@ model Centro {
   profesionales Profesional[]
   citas         Cita[]
   cargas        Carga[]
+  envios        Envio[]
 
   @@map("centro")
 }
@@ -132,16 +133,24 @@ enum SexoPaciente {
 /// Datos de contacto del paciente. RUT único. El teléfono se guarda cifrado a nivel de aplicación
 /// (AES-256-GCM); el resto depende del cifrado en reposo del disco/BD (S6).
 model Paciente {
-  id              String        @id @default(uuid()) @db.Uuid
-  rut             String        @unique
+  id              String           @id @default(uuid()) @db.Uuid
+  rut             String           @unique
   nombre          String
   telefonoCifrado String?
-  fechaNacimiento DateTime?     @db.Date
+  /// HMAC del teléfono: permite ubicar al paciente que responde por WhatsApp sin descifrar la tabla.
+  telefonoHash    String?
+  /// El paciente pidió no recibir más mensajes por WhatsApp (se le llama por teléfono).
+  whatsappBaja    Boolean          @default(false)
+  whatsappBajaEn  DateTime?        @db.Timestamptz(6)
+  fechaNacimiento DateTime?        @db.Date
   sexo            SexoPaciente?
-  creadoEn        DateTime      @default(now()) @db.Timestamptz(6)
-  actualizadoEn   DateTime      @updatedAt @db.Timestamptz(6)
+  creadoEn        DateTime         @default(now()) @db.Timestamptz(6)
+  actualizadoEn   DateTime         @updatedAt @db.Timestamptz(6)
   citas           Cita[]
+  mensajes        Mensaje[]
+  consentimientos Consentimiento[]
 
+  @@index([telefonoHash])
   @@map("paciente")
 }
 
@@ -165,6 +174,8 @@ model Cita {
   carga             Carga          @relation(fields: [cargaId], references: [id])
   creadoEn          DateTime       @default(now()) @db.Timestamptz(6)
   tarea             TareaContacto?
+  mensajes          Mensaje[]
+  liberacion        Liberacion?
 
   /// Recargar la misma planilla no duplica citas.
   @@unique([centroId, pacienteId, fecha, hora, profesionalClave])
@@ -179,6 +190,10 @@ model TareaContacto {
   cita          Cita               @relation(fields: [citaId], references: [id], onDelete: Cascade)
   estado        EstadoContacto     @default(sin_enviar)
   subestado     SubestadoContacto?
+  enviadoEn     DateTime?          @db.Timestamptz(6)
+  respondidoEn  DateTime?          @db.Timestamptz(6)
+  respuesta     RespuestaPaciente?
+  formaContacto FormaContacto?
   actualizadoEn DateTime           @updatedAt @db.Timestamptz(6)
 
   @@index([estado])
@@ -205,4 +220,121 @@ model Carga {
 
   @@index([centroId, creadaEn])
   @@map("carga")
+}
+
+// ============================================================================ S3: confirmación por WhatsApp
+
+enum TipoMensaje {
+  confirmacion
+  recordatorio
+  reagendamiento
+}
+
+enum EstadoMensaje {
+  en_cola
+  enviado
+  entregado
+  leido
+  fallido
+}
+
+enum RespuestaPaciente {
+  si
+  no
+}
+
+enum FormaContacto {
+  whatsapp
+  llamada
+}
+
+/// Un mensaje saliente. (citaId, tipo) es único: nunca se envía dos veces el mismo tipo de mensaje
+/// para una cita (deduplicación incluso si dos personas pulsan "Enviar" a la vez). Se mapea a FHIR Communication.
+model Mensaje {
+  id             String        @id @default(uuid()) @db.Uuid
+  citaId         String        @db.Uuid
+  cita           Cita          @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  pacienteId     String        @db.Uuid
+  paciente       Paciente      @relation(fields: [pacienteId], references: [id])
+  envioId        String?       @db.Uuid
+  envio          Envio?        @relation(fields: [envioId], references: [id])
+  tipo           TipoMensaje
+  estado         EstadoMensaje @default(en_cola)
+  plantilla      String
+  /// ID del mensaje en WhatsApp (wamid); el webhook lo usa para actualizar el estado.
+  proveedorId    String?       @unique
+  intentos       Int           @default(0)
+  /// Código de error del proveedor (nunca el contenido del mensaje).
+  errorCodigo    String?
+  creadoEn       DateTime      @default(now()) @db.Timestamptz(6)
+  programadoPara DateTime?     @db.Timestamptz(6)
+  enviadoEn      DateTime?     @db.Timestamptz(6)
+  entregadoEn    DateTime?     @db.Timestamptz(6)
+  leidoEn        DateTime?     @db.Timestamptz(6)
+  fallidoEn      DateTime?     @db.Timestamptz(6)
+
+  @@unique([citaId, tipo])
+  @@index([envioId])
+  @@index([estado])
+  @@map("mensaje")
+}
+
+/// Lote de envío pedido por una funcionaria (para el resumen y el seguimiento).
+model Envio {
+  id                  String    @id @default(uuid()) @db.Uuid
+  centroId            String    @db.Uuid
+  centro              Centro    @relation(fields: [centroId], references: [id])
+  /// `sub` de Keycloak de quien lo pidió.
+  usuarioId           String
+  creadoEn            DateTime  @default(now()) @db.Timestamptz(6)
+  solicitadas         Int
+  encoladas           Int
+  omitidasSinTelefono Int
+  omitidasBaja        Int
+  omitidasEstado      Int
+  mensajes            Mensaje[]
+
+  @@index([centroId, creadoEn])
+  @@map("envio")
+}
+
+/// Mensajes recibidos de pacientes, solo para deduplicar reintentos del webhook (no guarda el texto).
+model MensajeEntrante {
+  id          String   @id @default(uuid()) @db.Uuid
+  proveedorId String   @unique
+  recibidoEn  DateTime @default(now()) @db.Timestamptz(6)
+  /// si | no | baja | ignorado
+  resultado   String
+  citaId      String?  @db.Uuid
+
+  @@map("mensaje_entrante")
+}
+
+/// El paciente respondió «No»: alguien debe liberar la hora en AVIS (que es dueño de la agenda).
+model Liberacion {
+  id          String    @id @default(uuid()) @db.Uuid
+  citaId      String    @unique @db.Uuid
+  cita        Cita      @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  creadaEn    DateTime  @default(now()) @db.Timestamptz(6)
+  resueltaEn  DateTime? @db.Timestamptz(6)
+  /// `sub` de Keycloak de quien la resolvió.
+  resueltaPor String?
+
+  @@index([resueltaEn])
+  @@map("liberacion")
+}
+
+/// Historial de bajas del canal WhatsApp (informe 13.3). Se mapea a FHIR Consent.
+model Consentimiento {
+  id           String   @id @default(uuid()) @db.Uuid
+  pacienteId   String   @db.Uuid
+  paciente     Paciente @relation(fields: [pacienteId], references: [id])
+  canal        String
+  /// revocado (el paciente pidió no recibir más mensajes)
+  estado       String
+  origen       String
+  registradoEn DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([pacienteId])
+  @@map("consentimiento")
 }

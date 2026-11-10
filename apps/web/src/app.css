@@ -450,3 +450,92 @@ input[type='file'].bh-input {
 .tabla-scroll .tabla {
   min-width: 560px;
 }
+
+/* ---------- Confirmación masiva (S3) ---------- */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-4);
+}
+.resumen-estados {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+.resumen-estados__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.tabla tbody tr[data-seleccionada='true'] {
+  background: var(--color-primary-subtle);
+}
+.motivo-no {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+.etiqueta--am {
+  color: var(--prioridad-am-fg);
+  background: var(--prioridad-am-bg);
+  border-color: var(--prioridad-am-border);
+  font-size: var(--text-xs);
+}
+
+.barra-seleccion {
+  position: sticky;
+  bottom: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+.barra-seleccion > span {
+  margin-right: auto;
+  font-weight: var(--weight-medium);
+}
+
+.dialogo {
+  width: min(520px, calc(100% - 2 * var(--space-4)));
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+}
+.dialogo::backdrop {
+  background: rgba(16, 24, 40, 0.45);
+}
+.dialogo h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--text-lg);
+}
+.dialogo p {
+  margin: 0 0 var(--space-3);
+}
+.dialogo .acciones {
+  margin-top: var(--space-4);
+}
+.vista-mensaje {
+  margin: 0 0 var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface-muted);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+.vista-mensaje p {
+  margin: 0;
+}
+.vista-mensaje .botones-ejemplo {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}

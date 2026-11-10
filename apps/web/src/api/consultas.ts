@@ -136,3 +136,181 @@ export function useImportarPlanilla() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['cargas'] }),
   });
 }
+
+// ------------------------------------------------------------------ Confirmación masiva (S3)
+
+export type EstadoCitaApi = 'sin_enviar' | 'enviado' | 'confirmado' | 'sin_respuesta' | 'cancelado';
+export type TipoFiltro = 'cronico' | 'morbilidad' | 'todos';
+
+export interface FilaConfirmacion {
+  id: string;
+  hora: string;
+  paciente: string;
+  rut: string;
+  telefono: string | null;
+  profesional: string;
+  prestacion: string;
+  tipo: 'cronico' | 'morbilidad';
+  estado: EstadoCitaApi;
+  subestado: 'recado' | 'no_ubicado' | null;
+  adultoMayor: boolean;
+  seleccionable: boolean;
+  motivoNoSeleccionable: 'ya_enviada' | 'baja' | 'sin_telefono' | null;
+}
+export interface ListadoConfirmaciones {
+  opciones: {
+    modo: 'simulador' | 'cloud';
+    puedeSimular: boolean;
+    anticipacionHoras: number;
+    ventana: { desde: string; hasta: string };
+    horasEspera: number;
+    fechaSugerida: string;
+  };
+  resumen: Record<EstadoCitaApi, number>;
+  filas: FilaConfirmacion[];
+  truncado: boolean;
+}
+export interface PrevisualizacionEnvio {
+  aEnviar: number;
+  sinTelefono: number;
+  baja: number;
+  yaEnviadasOEnOtroEstado: number;
+  mensaje: string | null;
+  programadoPara: string | null;
+  ventana: { desde: string; hasta: string };
+}
+export interface ResultadoEnvio {
+  envioId: string;
+  solicitadas: number;
+  encoladas: number;
+  omitidasSinTelefono: number;
+  omitidasBaja: number;
+  omitidasEstado: number;
+  programadoPara: string | null;
+}
+export interface ProgresoEnvio {
+  id: string;
+  solicitadas: number;
+  encoladas: number;
+  omitidasSinTelefono: number;
+  omitidasBaja: number;
+  omitidasEstado: number;
+  mensajes: { en_cola: number; enviado: number; entregado: number; leido: number; fallido: number };
+  terminado: boolean;
+}
+export interface Liberacion {
+  id: string;
+  fecha: string;
+  hora: string;
+  paciente: string;
+  rut: string;
+  profesional: string;
+  centro: string;
+}
+
+export function useConfirmaciones(p: { centro: string; fecha: string; tipo: TipoFiltro }) {
+  const q = new URLSearchParams({
+    fecha: p.fecha,
+    tipo: p.tipo,
+    ...(p.centro ? { centro: p.centro } : {}),
+  });
+  return useQuery({
+    queryKey: ['confirmaciones', p.centro, p.fecha, p.tipo],
+    queryFn: () => apiFetch<ListadoConfirmaciones>(`/api/confirmaciones?${q}`),
+    // Sin centro (encargado/administrador que aún no eligió) no se consulta: la API respondería 400.
+    enabled: p.centro !== '' && /^\d{4}-\d{2}-\d{2}$/.test(p.fecha),
+    // Las respuestas de los pacientes llegan solas (webhook): la lista se actualiza sin recargar.
+    refetchInterval: 15_000,
+  });
+}
+
+interface ParamsEnvio {
+  centro: string;
+  citaIds: string[];
+}
+export const usePrevisualizarEnvio = () =>
+  useMutation({
+    mutationFn: (p: ParamsEnvio) =>
+      apiFetch<PrevisualizacionEnvio>('/api/envios/previsualizar', {
+        method: 'POST',
+        body: JSON.stringify(p),
+      }),
+  });
+
+export function useCrearEnvio() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (p: ParamsEnvio) =>
+      apiFetch<ResultadoEnvio>('/api/envios', { method: 'POST', body: JSON.stringify(p) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['confirmaciones'] }),
+  });
+}
+
+/** Consulta el avance cada 2 s hasta que no queden mensajes en cola. */
+export const useProgresoEnvio = (envioId: string | null) =>
+  useQuery({
+    queryKey: ['envio', envioId],
+    queryFn: () => apiFetch<ProgresoEnvio>(`/api/envios/${envioId}`),
+    enabled: envioId !== null,
+    refetchInterval: (q) => (q.state.data?.terminado ? false : 2000),
+  });
+
+export function useSimularRespuestas() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (centro: string) =>
+      apiFetch<{
+        confirmadas: number;
+        canceladas: number;
+        bajas: number;
+        sinResponder: number;
+        sinEntregar: number;
+      }>('/api/envios/simular-respuestas', { method: 'POST', body: JSON.stringify({ centro }) }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['confirmaciones'] });
+      void qc.invalidateQueries({ queryKey: ['liberaciones'] });
+    },
+  });
+}
+
+export const useLiberaciones = () =>
+  useQuery({
+    queryKey: ['liberaciones'],
+    queryFn: () => apiFetch<Liberacion[]>('/api/liberaciones'),
+  });
+
+export function useResolverLiberacion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<{ id: string }>(`/api/liberaciones/${id}/resolver`, { method: 'POST' }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['liberaciones'] }),
+  });
+}
+
+// ----------------------------------------------------------------- Parámetros de operación (S3)
+
+export interface Parametro {
+  clave: string;
+  descripcion: string;
+  valor: unknown;
+  porDefecto: unknown;
+}
+
+export const useParametros = () =>
+  useQuery({
+    queryKey: ['parametros'],
+    queryFn: () => apiFetch<Parametro[]>('/api/config/parametros'),
+  });
+
+export function useActualizarParametro() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ clave, valor }: { clave: string; valor: unknown }) =>
+      apiFetch<{ clave: string }>(`/api/config/parametros/${encodeURIComponent(clave)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ valor }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['parametros'] }),
+  });
+}

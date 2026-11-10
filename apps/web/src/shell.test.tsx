@@ -98,8 +98,8 @@ describe('Control de acceso en la web', () => {
 
   it('un módulo pendiente de construir muestra el sprint en que llega', async () => {
     respuestas['/api/me'] = me('funcionaria', true);
-    montar('/confirmaciones');
-    expect(await screen.findByText(/Sprint 3/)).toBeTruthy();
+    montar('/pendientes');
+    expect(await screen.findByText(/Sprint 4/)).toBeTruthy();
   });
 });
 
@@ -132,6 +132,86 @@ describe('Configuración (administrador)', () => {
       const patch = llamadas.find((l) => l.ruta === '/api/config/motivos/m1');
       expect(patch?.init?.method).toBe('PATCH');
       expect(JSON.parse(String(patch?.init?.body))).toEqual({ activo: false });
+    });
+  });
+
+  describe('parámetros de envío', () => {
+    const parametros = [
+      {
+        clave: 'envio.horas_espera_respuesta',
+        descripcion: 'Horas de espera antes de «Sin respuesta»',
+        valor: 24,
+        porDefecto: 24,
+      },
+      {
+        clave: 'envio.ventana_horaria',
+        descripcion: 'Horario de envío',
+        valor: { desde: '09:00', hasta: '18:00' },
+        porDefecto: { desde: '09:00', hasta: '18:00' },
+      },
+      {
+        clave: 'envio.segundo_mensaje_adulto_mayor',
+        descripcion: 'Segundo recordatorio a mayores',
+        valor: true,
+        porDefecto: true,
+      },
+    ];
+    const preparar = () => {
+      respuestas['/api/me'] = me('administrador', false);
+      respuestas['/api/centros'] = [centro];
+      respuestas['/api/config/motivos'] = [];
+      respuestas['/api/config/parametros'] = parametros;
+    };
+
+    it('muestra cada parámetro con su valor legible', async () => {
+      preparar();
+      montar('/configuracion');
+      expect(await screen.findByText('Horario de envío')).toBeTruthy();
+      expect(screen.getByText('09:00 a 18:00')).toBeTruthy();
+      expect(screen.getByText('Sí')).toBeTruthy();
+    });
+
+    it('edita un número y envía PATCH con el valor nuevo', async () => {
+      preparar();
+      respuestas['/api/config/parametros/envio.horas_espera_respuesta'] = { clave: 'x', valor: 12 };
+      montar('/configuracion');
+      fireEvent.click(await screen.findByRole('button', { name: /Editar: Horas de espera/ }));
+      fireEvent.change(screen.getByLabelText(/Horas de espera/), { target: { value: '12' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+      await waitFor(() => {
+        const patch = llamadas.find(
+          (l) => l.ruta === '/api/config/parametros/envio.horas_espera_respuesta',
+        );
+        expect(patch?.init?.method).toBe('PATCH');
+        expect(JSON.parse(String(patch?.init?.body))).toEqual({ valor: 12 });
+      });
+    });
+
+    it('edita la ventana horaria con dos campos de hora', async () => {
+      preparar();
+      respuestas['/api/config/parametros/envio.ventana_horaria'] = { clave: 'x', valor: {} };
+      montar('/configuracion');
+      fireEvent.click(await screen.findByRole('button', { name: /Editar: Horario de envío/ }));
+      fireEvent.change(screen.getByLabelText('Desde'), { target: { value: '10:00' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+      await waitFor(() => {
+        const patch = llamadas.find(
+          (l) => l.ruta === '/api/config/parametros/envio.ventana_horaria',
+        );
+        expect(JSON.parse(String(patch?.init?.body))).toEqual({
+          valor: { desde: '10:00', hasta: '18:00' },
+        });
+      });
+    });
+
+    it('cancelar descarta el cambio y no llama a la API', async () => {
+      preparar();
+      montar('/configuracion');
+      fireEvent.click(await screen.findByRole('button', { name: /Editar: Segundo recordatorio/ }));
+      fireEvent.change(screen.getByLabelText(/Segundo recordatorio/), { target: { value: 'no' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
+      expect(screen.getByText('Sí')).toBeTruthy();
+      expect(llamadas.some((l) => l.init?.method === 'PATCH')).toBe(false);
     });
   });
 });

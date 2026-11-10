@@ -86,3 +86,20 @@ export function instanteSantiago(fecha: string, hora: string): string {
   const abs = Math.abs(o2);
   return `${fecha}T${hora}:00${signo}${pad(Math.floor(abs / 60))}:${pad(abs % 60)}`;
 }
+
+/** AAAA-MM-DD + n días (aritmética en UTC, sin zona horaria). */
+export function sumarDias(fecha: string, dias: number): string {
+  const [a, m, d] = fecha.split('-').map(Number) as [number, number, number];
+  return new Date(Date.UTC(a, m - 1, d + dias)).toISOString().slice(0, 10);
+}
+
+/**
+ * Rango de instantes [desde 00:00, hasta+1 00:00) en America/Santiago, para consultar por día
+ * calendario chileno sin que el huso del servidor cambie qué registros caen en cada día.
+ */
+export function rangoInstantesSantiago(desde: string, hasta: string): { gte: Date; lt: Date } {
+  return {
+    gte: new Date(instanteSantiago(desde, '00:00')),
+    lt: new Date(instanteSantiago(sumarDias(hasta, 1), '00:00')),
+  };
+}

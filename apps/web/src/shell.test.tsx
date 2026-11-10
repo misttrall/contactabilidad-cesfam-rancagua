@@ -95,12 +95,6 @@ describe('Control de acceso en la web', () => {
     expect(await screen.findByText('Sin acceso')).toBeTruthy();
     expect(llamadas.some((l) => l.ruta.startsWith('/api/config'))).toBe(false);
   });
-
-  it('un módulo pendiente de construir muestra el sprint en que llega', async () => {
-    respuestas['/api/me'] = me('encargado', false);
-    montar('/reportes');
-    expect(await screen.findByText(/Sprint 5/)).toBeTruthy();
-  });
 });
 
 describe('Configuración (administrador)', () => {

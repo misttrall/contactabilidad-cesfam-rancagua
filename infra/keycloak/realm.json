@@ -12,16 +12,27 @@
   "maxFailureWaitSeconds": 900,
   "loginTheme": "businesshub",
   "internationalizationEnabled": true,
-  "supportedLocales": ["es"],
+  "supportedLocales": [
+    "es"
+  ],
   "defaultLocale": "es",
   "accessTokenLifespan": 300,
   "ssoSessionIdleTimeout": 1800,
   "ssoSessionMaxLifespan": 28800,
   "roles": {
     "realm": [
-      { "name": "funcionaria", "description": "Operadora del call center de un Cesfam" },
-      { "name": "encargado", "description": "Supervisor del call center (todos los centros)" },
-      { "name": "administrador", "description": "Administración del sistema" }
+      {
+        "name": "funcionaria",
+        "description": "Operadora del call center de un Cesfam"
+      },
+      {
+        "name": "encargado",
+        "description": "Supervisor del call center (todos los centros)"
+      },
+      {
+        "name": "administrador",
+        "description": "Administración del sistema"
+      }
     ]
   },
   "components": {
@@ -51,8 +62,12 @@
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "implicitFlowEnabled": false,
-      "redirectUris": ["http://localhost:5173/*"],
-      "webOrigins": ["http://localhost:5173"],
+      "redirectUris": [
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173"
+      ],
       "attributes": {
         "pkce.code.challenge.method": "S256",
         "post.logout.redirect.uris": "http://localhost:5173/*"
@@ -114,6 +129,16 @@
           }
         }
       ]
+    },
+    {
+      "clientId": "businesshub-admin",
+      "name": "SOLO DESARROLLO: cuenta de servicio para administrar usuarios desde el sistema",
+      "enabled": true,
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "secret": "dev-admin-secret-no-usar-en-produccion"
     }
   ],
   "users": [
@@ -124,9 +149,21 @@
       "firstName": "Funcionaria",
       "lastName": "Demo Centro",
       "email": "funcionaria.csc@demo.invalid",
-      "attributes": { "centro_id": ["CSC"] },
-      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
-      "realmRoles": ["funcionaria"]
+      "attributes": {
+        "centro_id": [
+          "CSC"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-1234!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "funcionaria"
+      ]
     },
     {
       "username": "funcionaria.csn",
@@ -135,9 +172,21 @@
       "firstName": "Funcionaria",
       "lastName": "Demo Norte",
       "email": "funcionaria.csn@demo.invalid",
-      "attributes": { "centro_id": ["CSN"] },
-      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
-      "realmRoles": ["funcionaria"]
+      "attributes": {
+        "centro_id": [
+          "CSN"
+        ]
+      },
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-1234!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "funcionaria"
+      ]
     },
     {
       "username": "encargado.demo",
@@ -146,8 +195,16 @@
       "firstName": "Encargado",
       "lastName": "Demo",
       "email": "encargado.demo@demo.invalid",
-      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
-      "realmRoles": ["encargado"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-1234!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "encargado"
+      ]
     },
     {
       "username": "admin.demo",
@@ -156,8 +213,16 @@
       "firstName": "Administrador",
       "lastName": "Demo",
       "email": "admin.demo@demo.invalid",
-      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }],
-      "realmRoles": ["administrador"]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-1234!",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "administrador"
+      ]
     },
     {
       "username": "sinrol.demo",
@@ -166,7 +231,26 @@
       "firstName": "Sin",
       "lastName": "Rol Demo",
       "email": "sinrol.demo@demo.invalid",
-      "credentials": [{ "type": "password", "value": "Demo-1234!", "temporary": false }]
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Demo-1234!",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "service-account-businesshub-admin",
+      "enabled": true,
+      "serviceAccountClientId": "businesshub-admin",
+      "clientRoles": {
+        "realm-management": [
+          "view-users",
+          "query-users",
+          "manage-users",
+          "view-realm"
+        ]
+      }
     }
   ]
 }

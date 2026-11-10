@@ -418,7 +418,7 @@ input[type='file'].bh-input {
 
 .datos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: var(--space-3);
 }
 .dato {
@@ -692,4 +692,61 @@ kbd {
   display: flex;
   gap: var(--space-2);
   justify-content: flex-end;
+}
+
+/* ---- Reportes (S5): barras apiladas con los colores de estado; el texto va en la tabla ---- */
+.celda-barra {
+  min-width: 140px;
+  width: 30%;
+}
+.barra-estados,
+.barra-simple {
+  display: flex;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+}
+.barra-estados__tramo {
+  flex-basis: 0;
+  min-width: 3px;
+}
+.barra-estados__tramo--sin_enviar {
+  background: var(--estado-sin-enviar-border);
+}
+.barra-estados__tramo--enviado {
+  background: var(--estado-enviado-fg);
+}
+.barra-estados__tramo--confirmado {
+  background: var(--estado-confirmado-fg);
+}
+.barra-estados__tramo--sin_respuesta {
+  background: var(--estado-sin-respuesta-fg);
+}
+.barra-estados__tramo--cancelado {
+  background: var(--estado-cancelado-fg);
+}
+.barra-simple span {
+  background: var(--color-primary);
+}
+.tabla th[scope='row'] {
+  font-weight: var(--weight-medium);
+  text-align: left;
+}
+.texto-plantilla {
+  font-size: var(--text-base);
+  font-weight: var(--weight-regular);
+}
+.texto-ayuda {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+}
+.zona-peligro {
+  border: 1px solid var(--estado-cancelado-border);
+  background: var(--estado-cancelado-bg);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
 }

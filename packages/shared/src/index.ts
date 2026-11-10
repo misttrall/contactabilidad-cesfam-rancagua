@@ -7,3 +7,4 @@ export * from './fechas';
 export * from './planilla';
 export * from './mensajeria';
 export * from './llamadas';
+export * from './reportes';

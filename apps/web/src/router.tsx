@@ -13,9 +13,9 @@ import { Configuracion } from './paginas/Configuracion';
 import { ConfirmacionMasiva } from './paginas/ConfirmacionMasiva';
 import { ConAcceso } from './paginas/ConAcceso';
 import { Diseno } from './paginas/Diseno';
-import { EnConstruccion } from './paginas/EnConstruccion';
 import { Historial } from './paginas/Historial';
 import { Inicio } from './paginas/Inicio';
+import { Reportes } from './paginas/Reportes';
 import { LlamadaEntrante } from './paginas/LlamadaEntrante';
 import { Pendientes } from './paginas/Pendientes';
 
@@ -35,7 +35,7 @@ const rutas = [
   protegida('/pendientes', 'pendientes', () => <Pendientes />),
   protegida('/llamadas/nueva', 'llamada_entrante', () => <LlamadaEntrante />),
   protegida('/llamadas', 'historial', () => <Historial />),
-  protegida('/reportes', 'reportes', () => <EnConstruccion modulo="reportes" />),
+  protegida('/reportes', 'reportes', () => <Reportes />),
   protegida('/configuracion', 'configuracion', () => <Configuracion />),
   // El catálogo de diseño no existe en producción.
   ...(config.ambiente !== 'PRODUCCION'

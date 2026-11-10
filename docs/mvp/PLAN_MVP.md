@@ -143,11 +143,23 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 **Pendiente a futuro de S4:** exportar el historial a Excel (va con los reportes, S5); límite de intentos por cita o recordatorio de «volver a llamar a las…»; mostrar a la funcionaria cuántos pendientes tiene en el menú.
 
 ### S5 — Dashboard, reportes y configuración
-- [ ] Endpoints de agregación (vistas materializadas o consultas indexadas) por centro/período, zona America/Santiago.
-- [ ] Dashboard con 7 KPI incluyendo "Enviadas" (D-03), reportes con filtros y exportación Excel auditada.
-- [ ] Configuración persistente: plantillas, motivos, parámetros, asignación de centro a usuarios.
-- [ ] "Restablecer datos demo" solo en ambiente DEMO (RF-21).
-- [ ] Métricas de piloto (14.1): tasa de respuesta, llamadas evitadas, tiempo por registro.
+**Estado: completado y verificado** en el navegador contra Keycloak y Postgres reales (dashboard, reportes, gestión de usuarios en Keycloak, restablecer demo). **446 pruebas** en total (shared 83, fhir 37, ui 4, web 91, api 231; las de integración con PostgreSQL real cubren reportes, administración y bloqueo de usuarios).
+
+- [x] **Dashboard:** 7 indicadores del día (cargadas, sin enviar, **enviadas**, confirmadas, sin respuesta, canceladas, llamadas entrantes hoy). «Enviadas» es un KPI propio y ya no se mezcla con canceladas (D-03). Además: por llamar, horas por liberar en AVIS, próximas a confirmar y últimas llamadas (RUT enmascarado). Fecha por defecto = hoy + anticipación (hora de Chile). La funcionaria ve su centro; encargado y administrador, todos o uno.
+- [x] **Reportes:** filtros desde/hasta/centro (rango máximo 366 días, fechas validadas contra el calendario), confirmaciones por centro (barras apiladas con los colores de estado **y** tabla con el nombre de cada estado), motivos de llamada, llamadas por edad × sexo (edad que tenía el paciente el día de la llamada) y métricas del piloto (14.1): proporción de confirmadas, tasa de respuesta por WhatsApp, llamadas evitadas, tiempo por registro (mediana, p90, % bajo 30 s).
+- [x] **Exportación a Excel:** 4 hojas con **solo cifras agregadas** (sin datos de pacientes); texto que empiece con `= + - @` se neutraliza contra inyección de fórmulas; cada descarga queda auditada (`reporte.exportar`: rango y centro).
+- [x] **Configuración:** centros (crear, renombrar, activar/desactivar), motivos (crear, reordenar, activar/desactivar), plantillas de WhatsApp (solo lectura), parámetros (ya existían) y **usuarios** (rol, centro y activación) administrados en Keycloak con una cuenta de servicio.
+- [x] **Usuario desactivado:** pierde el acceso en segundos aunque su token siga vigente (el guard consulta `activo` con caché de 30 s que se invalida al cambiar); al cambiar rol/centro se cierran sus sesiones.
+- [x] **Restablecer datos demo (RF-21):** solo en ambiente DEMO (el servicio mismo se niega en QA/PROD, no solo la web), exige escribir RESTABLECER, borra datos operativos, conserva catálogo, usuarios y auditoría, y siembra citas ficticias por centro.
+
+**Decisiones tomadas en S5**
+- El Excel no lleva datos personales: el reporte es de gestión; el detalle por paciente vive en la aplicación con revelación auditada.
+- El centro solo se asigna a funcionarias (encargado y administrador ven todos); una funcionaria siempre exige un centro activo; nadie puede quitarse su propio rol de administrador ni desactivarse.
+- Las plantillas son de solo lectura: el texto lo fija la plantilla aprobada en Meta; cambiarlo exige una nueva aprobación.
+- La cuenta de servicio `businesshub-admin` del realm es **solo de desarrollo**; en QA/PROD debe crearse con un secreto propio (variables `KEYCLOAK_ADMIN_CLIENT_ID/SECRET`). Sin ellas la gestión de usuarios queda deshabilitada y la pantalla lo informa.
+- Las agregaciones son consultas indexadas (sin vistas materializadas): suficiente para el volumen del piloto.
+
+**Pendiente a futuro de S5:** exportar el historial de llamadas a Excel (arrastrado de S4; llevaría datos personales, requiere definir qué columnas); crear usuarios desde la aplicación (hoy se crean en Keycloak); edición de plantillas cuando exista el flujo de aprobación en Meta; vistas materializadas si el volumen lo exige.
 
 ### S6 — Endurecimiento, conformidad y piloto
 - [ ] Fachada FHIR completa: `GET/POST` según CapabilityStatement, búsquedas mínimas (`Patient?identifier=`, `Appointment?date=&location=`), `_format=json`; todo ejemplo y respuesta validados con el Validator en CI.

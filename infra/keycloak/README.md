@@ -4,6 +4,7 @@
 
 - Usuarios y contraseñas **ficticios**, solo para entorno local. Contraseña común de desarrollo: `Demo-1234!`.
 - El cliente `businesshub-dev-cli` (usuario + contraseña) existe solo para pruebas automatizadas locales. **No debe existir** en QA/PRODUCCION.
+- El cliente `businesshub-admin` (cuenta de servicio con `manage-users`) permite administrar usuarios desde el sistema; su secreto del realm de desarrollo es público. **En QA/PRODUCCION debe crearse con un secreto propio** y entregarse por `KEYCLOAK_ADMIN_CLIENT_ID/SECRET`.
 - El realm de QA/PRODUCCION se define en S6: secretos por gestor, MFA obligatorio, URLs `https`, sin cliente dev-cli.
 
 | Usuario | Rol | Centro (`centro_id`) |

@@ -1,5 +1,7 @@
 import { Controller, Get, Inject, Logger, Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { AdministracionController } from './administracion/administracion.controller';
+import { DemoService } from './administracion/demo.service';
 import { AuditoriaService } from './auditoria/auditoria.service';
 import { AuthGuard } from './auth/auth.guard';
 import { Publico } from './auth/decoradores';
@@ -33,8 +35,12 @@ import { SimulacionService } from './mensajeria/simulacion.service';
 import { WebhookController } from './mensajeria/webhook.controller';
 import { WebhookService } from './mensajeria/webhook.service';
 import { PrismaService } from './prisma/prisma.service';
+import { ReportesController } from './reportes/reportes.controller';
+import { ReportesService } from './reportes/reportes.service';
 import { CANAL, COLA_ENVIOS, CONFIG, RELOJ, VERIFICADOR_TOKEN } from './tokens';
 import { MeController } from './usuarios/me.controller';
+import { KeycloakAdminService } from './usuarios/keycloak-admin.service';
+import { UsuarioActivoService } from './usuarios/usuario-activo.service';
 import { UsuariosService } from './usuarios/usuarios.service';
 
 @Controller('health')
@@ -62,6 +68,8 @@ export class SaludController {
     PendientesController,
     PacientesController,
     LlamadasEntrantesController,
+    ReportesController,
+    AdministracionController,
   ],
   providers: [
     { provide: CONFIG, useFactory: () => cargarConfig() },
@@ -112,6 +120,10 @@ export class SaludController {
     BarridoService,
     PendientesService,
     LlamadasEntrantesService,
+    ReportesService,
+    KeycloakAdminService,
+    UsuarioActivoService,
+    DemoService,
     // Orden importa: primero autenticación, luego autorización por módulo.
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: ModuloGuard },

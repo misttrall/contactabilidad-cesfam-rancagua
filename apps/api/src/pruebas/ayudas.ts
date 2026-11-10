@@ -127,6 +127,7 @@ export function crearPrismaFalso() {
       },
     },
     usuario: {
+      findUnique: async () => null,
       upsert: async ({
         create,
       }: {

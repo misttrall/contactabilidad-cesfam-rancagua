@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Modulo, Rol } from '@bh/shared';
-import { apiFetch } from './cliente';
+import { apiBlob, apiFetch } from './cliente';
 
 export interface Me {
   id: string;
@@ -495,5 +495,227 @@ export function useHistorialLlamadas(f: FiltrosHistorialUI) {
     queryKey: ['historial', f],
     queryFn: () => apiFetch<Historial>(`/api/llamadas-entrantes?${q}`),
     placeholderData: (anterior) => anterior,
+  });
+}
+
+// ------------------------------------------------------------------------- Dashboard (S5)
+
+export interface Dashboard {
+  fecha: string;
+  hoy: string;
+  kpis: {
+    cargadas: number;
+    porEnviar: number;
+    enviadas: number;
+    confirmadas: number;
+    sinRespuesta: number;
+    canceladas: number;
+    llamadasEntrantesHoy: number;
+  };
+  pendientesPorLlamar: number;
+  liberacionesPendientes: number;
+  proximasAConfirmar: { id: string; hora: string; paciente: string; tipo: string }[];
+  llamadasRecientes: {
+    id: string;
+    creadaEn: string;
+    centro: string;
+    paciente: string | null;
+    rut: string;
+    motivo: string;
+  }[];
+}
+
+export const useDashboard = (p: { centro: string; fecha: string }) =>
+  useQuery({
+    queryKey: ['dashboard', p],
+    queryFn: () => {
+      const q = new URLSearchParams();
+      if (p.centro) q.set('centro', p.centro);
+      if (p.fecha) q.set('fecha', p.fecha);
+      return apiFetch<Dashboard>(`/api/dashboard?${q}`);
+    },
+    refetchInterval: 60_000,
+  });
+
+// -------------------------------------------------------------------------- Reportes (S5)
+
+export interface FilaConfirmacion2 {
+  centro: string;
+  nombre: string;
+  total: number;
+  sin_enviar: number;
+  enviado: number;
+  confirmado: number;
+  sin_respuesta: number;
+  cancelado: number;
+}
+export interface ResumenReporte {
+  filtros: { desde: string; hasta: string; dias: number; centro: string | null };
+  confirmaciones: {
+    porCentro: FilaConfirmacion2[];
+    total: Omit<FilaConfirmacion2, 'centro' | 'nombre'>;
+  };
+  motivos: { total: number; filas: { motivo: string; llamadas: number }[] };
+  edadSexo: {
+    filas: { tramo: string; M: number; F: number; sinDato: number; total: number }[];
+    sinPacienteIdentificado: number;
+  };
+  piloto: {
+    proporcionConfirmadas: number | null;
+    citasConWhatsapp: number;
+    tasaRespuestaWhatsapp: number | null;
+    respondidasPorWhatsapp: number;
+    llamadasEvitadas: number;
+    llamadasEvitadasPorDia: number;
+    llamadasSalientes: number;
+    llamadasEntrantes: number;
+    tiempoRegistroEntrante: {
+      registros: number;
+      promedio: number;
+      mediana: number;
+      p90: number;
+      /** % de registros bajo la meta de 30 s. */
+      bajoMeta: number;
+    } | null;
+  };
+}
+
+const qReporte = (p: { centro: string; desde: string; hasta: string }) => {
+  const q = new URLSearchParams({ desde: p.desde, hasta: p.hasta });
+  if (p.centro) q.set('centro', p.centro);
+  return q.toString();
+};
+export const useResumenReporte = (p: { centro: string; desde: string; hasta: string }) =>
+  useQuery({
+    queryKey: ['reporte', p],
+    queryFn: () => apiFetch<ResumenReporte>(`/api/reportes/resumen?${qReporte(p)}`),
+    enabled: p.desde !== '' && p.hasta !== '' && p.desde <= p.hasta,
+  });
+export const exportarReporte = (p: { centro: string; desde: string; hasta: string }) =>
+  apiBlob(`/api/reportes/exportar?${qReporte(p)}`);
+
+// ---------------------------------------------------------------- Configuración ampliada (S5)
+
+export interface CentroAdmin extends Centro {
+  activo: boolean;
+}
+export const useCentrosAdmin = () =>
+  useQuery({
+    queryKey: ['centros-admin'],
+    queryFn: () => apiFetch<CentroAdmin[]>('/api/config/centros'),
+  });
+export function useCrearCentro() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { codigo: string; nombre: string }) =>
+      apiFetch<CentroAdmin>('/api/config/centros', { method: 'POST', body: JSON.stringify(d) }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['centros-admin'] });
+      void qc.invalidateQueries({ queryKey: ['centros'] });
+    },
+  });
+}
+export function useEditarCentro() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...d }: { id: string; nombre?: string; activo?: boolean }) =>
+      apiFetch<CentroAdmin>(`/api/config/centros/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(d),
+      }),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['centros-admin'] });
+      void qc.invalidateQueries({ queryKey: ['centros'] });
+    },
+  });
+}
+export function useCrearMotivo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (d: { codigo: string; descripcion: string }) =>
+      apiFetch<Motivo>('/api/config/motivos', { method: 'POST', body: JSON.stringify(d) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['motivos-admin'] }),
+  });
+}
+export function useMoverMotivo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, direccion }: { id: string; direccion: 'arriba' | 'abajo' }) =>
+      apiFetch<Motivo[]>(`/api/config/motivos/${id}/mover`, {
+        method: 'POST',
+        body: JSON.stringify({ direccion }),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['motivos-admin'] }),
+  });
+}
+
+export interface PlantillasConfig {
+  modo: string;
+  plantillas: { clave: string; nombre: string; idioma: string; texto: string; botones: string[] }[];
+  parametros: string[];
+  reagendamiento: string;
+  nota: string;
+}
+export const usePlantillas = () =>
+  useQuery({
+    queryKey: ['plantillas'],
+    queryFn: () => apiFetch<PlantillasConfig>('/api/config/plantillas'),
+  });
+
+export interface UsuarioAdmin {
+  id: string;
+  username: string;
+  nombre: string;
+  activo: boolean;
+  rol: Rol | null;
+  centro: string | null;
+  ultimoIngreso: string | null;
+  esYo: boolean;
+}
+export const useUsuariosAdmin = () =>
+  useQuery({
+    queryKey: ['usuarios-admin'],
+    queryFn: () =>
+      apiFetch<{ habilitado: boolean; usuarios: UsuarioAdmin[] }>('/api/config/usuarios'),
+  });
+export function useEditarUsuario() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      ...d
+    }: {
+      id: string;
+      rol?: Rol;
+      centro?: string | null;
+      activo?: boolean;
+    }) =>
+      apiFetch<UsuarioAdmin>(`/api/config/usuarios/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(d),
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['usuarios-admin'] }),
+  });
+}
+
+export const useEstadoDemo = () =>
+  useQuery({
+    queryKey: ['demo'],
+    queryFn: () => apiFetch<{ disponible: boolean }>('/api/config/demo'),
+  });
+export function useRestablecerDemo() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (sembrar: boolean) =>
+      apiFetch<{
+        citas: number;
+        pacientes: number;
+        llamadasEntrantes: number;
+        citasSembradas: number;
+      }>('/api/config/demo/restablecer', {
+        method: 'POST',
+        body: JSON.stringify({ sembrar, confirmacion: 'RESTABLECER' }),
+      }),
+    onSuccess: () => qc.invalidateQueries(),
   });
 }

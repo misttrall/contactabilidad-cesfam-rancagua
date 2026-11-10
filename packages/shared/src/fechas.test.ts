@@ -5,7 +5,9 @@ import {
   instanteSantiago,
   normalizarFecha,
   normalizarHora,
+  rangoInstantesSantiago,
   serialExcelAFecha,
+  sumarDias,
 } from './fechas';
 
 describe('fechas de Excel', () => {
@@ -50,5 +52,23 @@ describe('instanteSantiago', () => {
   it('usa el offset real de Chile: -03:00 en verano y -04:00 en invierno', () => {
     expect(instanteSantiago('2026-11-20', '09:30')).toBe('2026-11-20T09:30:00-03:00');
     expect(instanteSantiago('2026-06-15', '09:30')).toBe('2026-06-15T09:30:00-04:00');
+  });
+});
+
+describe('rangoInstantesSantiago', () => {
+  it('cubre el día calendario chileno completo, no el UTC', () => {
+    const r = rangoInstantesSantiago('2026-11-20', '2026-11-20'); // verano: UTC-3
+    expect(r.gte.toISOString()).toBe('2026-11-20T03:00:00.000Z');
+    expect(r.lt.toISOString()).toBe('2026-11-21T03:00:00.000Z');
+  });
+  it('respeta el cambio de horario (invierno UTC-4) y los rangos de varios días', () => {
+    const r = rangoInstantesSantiago('2026-06-14', '2026-06-16');
+    expect(r.gte.toISOString()).toBe('2026-06-14T04:00:00.000Z');
+    expect(r.lt.toISOString()).toBe('2026-06-17T04:00:00.000Z');
+  });
+  it('suma días cruzando fin de mes y de año', () => {
+    expect(sumarDias('2026-11-30', 1)).toBe('2026-12-01');
+    expect(sumarDias('2026-12-31', 1)).toBe('2027-01-01');
+    expect(sumarDias('2026-03-01', -1)).toBe('2026-02-28');
   });
 });

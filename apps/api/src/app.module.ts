@@ -5,7 +5,10 @@ import { AuthGuard } from './auth/auth.guard';
 import { Publico } from './auth/decoradores';
 import { ModuloGuard } from './auth/modulo.guard';
 import { crearVerificadorKeycloak } from './auth/verificador';
+import { CargasController } from './cargas/cargas.controller';
+import { CargasService } from './cargas/cargas.service';
 import { CatalogosController } from './catalogos/catalogos.controller';
+import { CifradoService } from './cifrado/cifrado.service';
 import { cargarConfig, type Config } from './config';
 import { FhirController } from './fhir/fhir.controller';
 import { PrismaService } from './prisma/prisma.service';
@@ -26,7 +29,13 @@ export class SaludController {
 }
 
 @Module({
-  controllers: [SaludController, FhirController, MeController, CatalogosController],
+  controllers: [
+    SaludController,
+    FhirController,
+    MeController,
+    CatalogosController,
+    CargasController,
+  ],
   providers: [
     { provide: CONFIG, useFactory: () => cargarConfig() },
     {
@@ -37,6 +46,8 @@ export class SaludController {
     PrismaService,
     AuditoriaService,
     UsuariosService,
+    CifradoService,
+    CargasService,
     // Orden importa: primero autenticación, luego autorización por módulo.
     { provide: APP_GUARD, useClass: AuthGuard },
     { provide: APP_GUARD, useClass: ModuloGuard },

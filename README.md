@@ -47,6 +47,20 @@ Usuarios de prueba (ficticios, solo local) en [infra/keycloak/README.md](infra/k
 
 En la API: `GET /health`, `GET /fhir/R4/metadata` (públicos) y el resto con `Authorization: Bearer <token>`.
 
+## Pruebas de integración (PostgreSQL real)
+
+Las pruebas de importación, idempotencia y concurrencia corren contra una base aparte y se **omiten** si no defines `TEST_DATABASE_URL` (el CI las exige y falla si falta):
+
+```bash
+docker compose exec -T postgres psql -U businesshub -d postgres -c "CREATE DATABASE businesshub_test"
+DATABASE_URL=postgresql://businesshub:businesshub@localhost:5432/businesshub_test pnpm --filter @bh/api db:migrate
+TEST_DATABASE_URL=postgresql://businesshub:businesshub@localhost:5432/businesshub_test pnpm turbo run test
+```
+
+## Cargar una planilla
+
+En la web: **Cargar planilla AVIS** → descargar la plantilla (datos ficticios) → revisar → importar. Por API: `POST /api/cargas/validar` y `POST /api/cargas` (multipart: `archivo`, `centro`, `excluirMorbilidad`). El archivo no se guarda.
+
 ## Reglas del repositorio
 
 - **Nunca** versionar planillas reales de AVIS ni datos de pacientes (`.xlsx/.xls/.csv` bloqueados por `.gitignore` y CI). Usar solo los datos ficticios de `packages/shared/src/semillas.ts`.

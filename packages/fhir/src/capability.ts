@@ -13,13 +13,15 @@ interface RecursoSoportado {
   interaction: ('read' | 'search-type')[];
 }
 
-/** S1: catálogos y recursos de referencia. Appointment, Task, etc. llegan en S2-S4. */
+/** S1: catálogos. S2: Appointment y Patient. Task y AppointmentResponse llegan en S3-S4. */
 export const RECURSOS_SOPORTADOS: RecursoSoportado[] = [
   { type: 'Organization', interaction: ['read', 'search-type'] },
   { type: 'Location', interaction: ['read', 'search-type'] },
   { type: 'Practitioner', interaction: ['read', 'search-type'] },
   { type: 'PractitionerRole', interaction: ['read', 'search-type'] },
   { type: 'CodeSystem', interaction: ['read'] },
+  { type: 'Appointment', interaction: ['read', 'search-type'] },
+  { type: 'Patient', interaction: ['read', 'search-type'] },
 ];
 
 export function construirCapabilityStatement(o: CapabilityStatementOpciones) {

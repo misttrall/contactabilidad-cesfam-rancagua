@@ -113,6 +113,9 @@ export function crearPrismaFalso() {
             centro: { codigo: centros.find((c) => c.id === p.centroId)!.codigo },
           })),
     },
+    parametro: { findUnique: async () => null },
+    cita: { findMany: async () => [] },
+    carga: { findMany: async () => [] },
     motivoLlamada: {
       findMany: async () => motivos,
       findUnique: async ({ where }: { where: { id: string } }) =>

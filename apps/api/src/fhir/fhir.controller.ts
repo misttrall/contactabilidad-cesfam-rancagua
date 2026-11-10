@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Controller,
   ForbiddenException,
   Get,
@@ -7,25 +8,31 @@ import {
   NotFoundException,
   Param,
   Query,
+  Req,
 } from '@nestjs/common';
 import {
   CODESYSTEMS_ESTATICOS,
   bundleSearchset,
+  citaAFhir,
   codeSystemMotivos,
   construirCapabilityStatement,
   operationOutcome,
   organizacionAFhir,
+  pacienteAFhir,
   practitionerAFhir,
   practitionerRoleAFhir,
   ubicacionAFhir,
 } from '@bh/fhir';
-import { resolverAlcance, type SesionUsuario } from '@bh/shared';
-import { Publico, Sesion } from '../auth/decoradores';
+import { normalizarRut, normalizarFecha, resolverAlcance, type SesionUsuario } from '@bh/shared';
+import { AuditoriaService } from '../auditoria/auditoria.service';
+import { CifradoService } from '../cifrado/cifrado.service';
+import { Publico, RequiereModulo, Sesion, type RequestConSesion } from '../auth/decoradores';
 import { PrismaService } from '../prisma/prisma.service';
 import { CONFIG } from '../tokens';
 import type { Config } from '../config';
 
 const FHIR_JSON = 'application/fhir+json; charset=utf-8';
+const ID_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * Fachada FHIR R4 (ADR-001 §2.3). S1: recursos de referencia (centros, profesionales, códigos).
@@ -36,6 +43,8 @@ export class FhirController {
   constructor(
     @Inject(CONFIG) private readonly config: Config,
     @Inject(PrismaService) private readonly prisma: PrismaService,
+    @Inject(CifradoService) private readonly cifrado: CifradoService,
+    @Inject(AuditoriaService) private readonly auditoria: AuditoriaService,
   ) {}
 
   private get base() {
@@ -123,6 +132,142 @@ export class FhirController {
     const f = CODESYSTEMS_ESTATICOS[id];
     if (!f) throw this.noEncontrado('CodeSystem', id);
     return f();
+  }
+
+  // ---------------------------------------------------------------- Appointment y Patient (S2)
+
+  /** Búsqueda: ?date=AAAA-MM-DD (obligatorio) y opcionalmente ?location=<id de centro>. Máx. 500. */
+  @Get('Appointment')
+  @RequiereModulo('pendientes')
+  @Header('Content-Type', FHIR_JSON)
+  async citas(
+    @Sesion() s: SesionUsuario,
+    @Query('date') date?: string,
+    @Query('location') location?: string,
+  ) {
+    const fecha = date ? normalizarFecha(date) : null;
+    if (!fecha) {
+      throw new BadRequestException(
+        operationOutcome('error', 'required', 'El parámetro date (AAAA-MM-DD) es obligatorio'),
+      );
+    }
+    const centros = (await this.centrosVisibles(s)).map((c) => c.id);
+    const ids = location ? centros.filter((id) => id === location) : centros;
+    const citas = await this.prisma.cita.findMany({
+      where: { centroId: { in: ids }, fecha: new Date(`${fecha}T00:00:00.000Z`) },
+      orderBy: [{ hora: 'asc' }],
+      take: 500,
+    });
+    return bundleSearchset(
+      citas.map((c) => citaAFhir(this.citaDominio(c))),
+      this.base,
+    );
+  }
+
+  @Get('Appointment/:id')
+  @RequiereModulo('pendientes')
+  @Header('Content-Type', FHIR_JSON)
+  async cita(@Param('id') id: string, @Sesion() s: SesionUsuario) {
+    const centros = (await this.centrosVisibles(s)).map((c) => c.id);
+    const cita = ID_UUID.test(id)
+      ? await this.prisma.cita.findFirst({ where: { id, centroId: { in: centros } } })
+      : null;
+    if (!cita) throw this.noEncontrado('Appointment', id);
+    return citaAFhir(this.citaDominio(cita));
+  }
+
+  /** Un paciente es visible si tiene al menos una cita en un centro del alcance del usuario. */
+  @Get('Patient/:id')
+  @RequiereModulo('pendientes')
+  @Header('Content-Type', FHIR_JSON)
+  async paciente(
+    @Param('id') id: string,
+    @Sesion() s: SesionUsuario,
+    @Req() req: RequestConSesion,
+  ) {
+    const centros = (await this.centrosVisibles(s)).map((c) => c.id);
+    const p = ID_UUID.test(id)
+      ? await this.prisma.paciente.findFirst({
+          where: { id, citas: { some: { centroId: { in: centros } } } },
+        })
+      : null;
+    if (!p) throw this.noEncontrado('Patient', id);
+    await this.auditarLecturaPaciente(s, p.id, req.ip);
+    return this.pacienteFhir(p);
+  }
+
+  /** ?identifier=<RUN> o <sistema>|<RUN>. */
+  @Get('Patient')
+  @RequiereModulo('pendientes')
+  @Header('Content-Type', FHIR_JSON)
+  async buscarPacientes(
+    @Sesion() s: SesionUsuario,
+    @Req() req: RequestConSesion,
+    @Query('identifier') identifier?: string,
+  ) {
+    const valor = identifier?.split('|').at(-1) ?? '';
+    const rut = normalizarRut(valor);
+    if (!rut) {
+      throw new BadRequestException(
+        operationOutcome(
+          'error',
+          'invalid',
+          'identifier debe ser un RUN válido (con dígito verificador)',
+        ),
+      );
+    }
+    const centros = (await this.centrosVisibles(s)).map((c) => c.id);
+    const p = await this.prisma.paciente.findFirst({
+      where: { rut, citas: { some: { centroId: { in: centros } } } },
+    });
+    if (!p) return bundleSearchset([], this.base);
+    await this.auditarLecturaPaciente(s, p.id, req.ip);
+    return bundleSearchset([this.pacienteFhir(p)], this.base);
+  }
+
+  private pacienteFhir(p: {
+    id: string;
+    rut: string;
+    nombre: string;
+    telefonoCifrado: string | null;
+    fechaNacimiento: Date | null;
+    sexo: 'M' | 'F' | null;
+  }) {
+    return pacienteAFhir(
+      {
+        rut: p.rut,
+        nombre: p.nombre,
+        sexo: p.sexo,
+        telefono: p.telefonoCifrado ? this.cifrado.descifrar(p.telefonoCifrado) : null,
+        fechaNacimiento: p.fechaNacimiento?.toISOString().slice(0, 10) ?? null,
+      },
+      p.id,
+    );
+  }
+
+  /** Leer datos de un paciente queda en la bitácora (sin RUT ni nombre: solo el id interno). */
+  private async auditarLecturaPaciente(s: SesionUsuario, pacienteId: string, ip?: string) {
+    await this.auditoria.registrar({
+      usuarioId: s.id,
+      accion: 'paciente.leer',
+      recurso: 'paciente',
+      recursoId: pacienteId,
+      ...(ip ? { ip } : {}),
+    });
+  }
+
+  private citaDominio(c: {
+    id: string;
+    centroId: string;
+    pacienteId: string;
+    profesionalId: string | null;
+    profesionalNombre: string;
+    fecha: Date;
+    hora: string;
+    prestacion: string;
+    tipo: 'cronico' | 'morbilidad';
+  }) {
+    return { ...c, fecha: c.fecha.toISOString().slice(0, 10) };
   }
 
   // ---------------------------------------------------------------- helpers de alcance

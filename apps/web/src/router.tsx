@@ -8,6 +8,7 @@ import {
 import type { Modulo } from '@bh/shared';
 import { config } from './config';
 import { Shell } from './Shell';
+import { Cargas } from './paginas/Cargas';
 import { Configuracion } from './paginas/Configuracion';
 import { ConAcceso } from './paginas/ConAcceso';
 import { Diseno } from './paginas/Diseno';
@@ -25,7 +26,7 @@ const protegida = (path: string, modulo: Modulo, pagina: () => React.ReactElemen
 
 const rutas = [
   protegida('/', 'dashboard', () => <Inicio />),
-  protegida('/cargas', 'cargar_citas', () => <EnConstruccion modulo="cargar_citas" />),
+  protegida('/cargas', 'cargar_citas', () => <Cargas />),
   protegida('/confirmaciones', 'confirmacion_masiva', () => (
     <EnConstruccion modulo="confirmacion_masiva" />
   )),

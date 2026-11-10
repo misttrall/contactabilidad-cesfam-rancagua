@@ -79,12 +79,24 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 **Pendiente a futuro de S1:** código DEIS de cada centro (CL Core identifica establecimientos por DEIS; hoy se usa un código local, ver §7); `parametro` aún sin endpoints de edición (llega con S3, cuando se usan); gestión de usuarios y asignación de centro desde la UI (hoy en Keycloak).
 
 ### S2 — Carga de planilla AVIS
-- [ ] Levantar con el Cesfam las **columnas reales** de la exportación AVIS (sin datos de pacientes) — bloqueante, ver §7.
-- [ ] Endpoint `POST /cargas` (multipart, límite 5 MB, solo `.xlsx/.xls`), parseo en memoria con SheetJS 0.20.x (cdn.sheetjs.com), archivo descartado tras el proceso.
-- [ ] Validación por fila (Zod): RUT módulo 11, teléfono, fecha/hora, profesional, prestación, tipo; reporte de errores por fila y columna; exclusión de morbilidad configurable.
-- [ ] Idempotencia: misma cita (centro + RUT + fecha + hora + profesional) no se duplica al recargar.
-- [ ] Transformación a `Bundle` transaction FHIR (Patient upsert por RUN, Appointment perfil Cita MINSAL, Task de contacto `sin-enviar`) y persistencia relacional.
-- [ ] Plantilla descargable con datos ficticios (RF-07). UI: asistente de 3 pasos (skill, `pantallas.md`).
+**Estado: completado y verificado de punta a punta** (planilla `.xlsx` real subida desde el navegador → Postgres) con 179 pruebas, 21 de ellas contra PostgreSQL real.
+
+- [~] **Columnas reales de AVIS: sigue pendiente con el Cesfam (bloqueante para el piloto).** Mientras tanto el lector reconoce las columnas del informe y variantes comunes (sin distinguir mayúsculas ni tildes); cuando se conozca el formato real basta agregar alias en [planilla.ts](../../packages/shared/src/planilla.ts).
+- [x] `POST /api/cargas/validar` y `POST /api/cargas` (multipart, 5 MB, `.xlsx/.xls`). SheetJS **0.20.3** desde cdn.sheetjs.com (corrige CVE-2023-30533 y CVE-2024-22363), en memoria: el archivo ni su nombre se guardan. Se valida la firma real del archivo (no solo la extensión), se rechazan macros, no se evalúan fórmulas y se limita a 5.000 filas.
+- [x] Validación por fila: RUT módulo 11, teléfono, fecha y hora (acepta números de Excel y `DD-MM-AAAA`), tipo, columnas opcionales (fecha de nacimiento, sexo). Informa **todos** los errores de cada fila con su número de fila de Excel y la columna. Morbilidad excluida por defecto (parámetro `carga.excluir_morbilidad_por_defecto`).
+- [x] **Idempotencia** (centro + paciente + fecha + hora + profesional): recargar la planilla no duplica citas ni reinicia su estado de contacto. Dos cargas simultáneas del mismo centro se serializan con un bloqueo de PostgreSQL (probado).
+- [x] Persistencia: `paciente` (teléfono cifrado AES-256-GCM), `cita`, `tarea_contacto` (`sin_enviar`) y `carga` (solo conteos). La auditoría `carga.importar` no lleva RUT, nombres ni teléfonos. 1.000 filas se importan en menos de 1 s.
+- [x] FHIR: `construirBundleCarga` arma el Bundle *transaction* (Patient con PUT condicional por RUN, Appointment con creación condicional por un identificador *hash*, Task `sin-enviar`) y se valida estructuralmente. Además la API sirve `Appointment?date=&location=` y `Patient?identifier=` (con alcance por centro; leer un paciente queda auditado). *El Bundle es la representación de intercambio para el adaptador hacia AVIS (S6); en el MVP la fuente de verdad es la base relacional.*
+- [x] Plantilla descargable con datos ficticios que se vuelve a cargar sin errores (probado). UI de 3 pasos (centro y archivo → revisión → resultado) con vista previa enmascarada, tabla de errores, historial de cargas y modo angosto.
+
+**Decisiones tomadas en S2**
+- **Validar e importar son dos llamadas sin estado en el servidor:** el navegador mantiene el archivo entre el paso 2 y el 3, y la importación vuelve a validar todo. Así no queda ningún dato de pacientes «en espera» en el servidor.
+- **Las filas con errores no bloquean:** se importan las válidas y se informa claramente cuántas quedaron fuera.
+- **La planilla es la fuente de los datos de contacto:** si cambia el teléfono de un paciente, se actualiza.
+- **Clave de cifrado** (`DATA_ENCRYPTION_KEY`): obligatoria fuera de DEMO; en DEMO hay una clave pública de desarrollo.
+- **El CI falla si no hay base de pruebas** (antes las pruebas de integración se omitían en silencio al pasar por Turborepo).
+
+**Pendiente a futuro de S2:** edad o fecha de nacimiento en la exportación de AVIS (sin ella no se puede priorizar a adultos mayores en S4); confirmar si AVIS repite el RUT con formato distinto; límite de tasa en la carga (S6).
 
 ### S3 — Confirmación masiva por WhatsApp
 - [ ] Interfaz `CanalMensajeria` con dos implementaciones: `SimuladorWhatsApp` (demo, incluye "Simular respuestas" — RF-11) y `WhatsAppCloudApi`.
@@ -147,6 +159,8 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 4. Responsable del tratamiento, encargado y alojamiento (convenio).
 5. Si una respuesta "No" debe liberar la hora automáticamente en el futuro (requiere integración AVIS).
 6. Puestos de trabajo: resolución, monitores, navegador (para calibrar la skill — `avis-referencia.md`).
+7. ¿La exportación de AVIS trae **edad o fecha de nacimiento** y **sexo**? (el lector ya acepta ambas como columnas opcionales; la prioridad de adultos mayores en S4 depende de esto).
+8. **Código DEIS** de cada Cesfam (CL Core identifica establecimientos por DEIS; hoy se usa un código local).
 
 ## 8. Próximo paso inmediato
 

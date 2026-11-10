@@ -215,7 +215,7 @@ export const CODESYSTEMS_ESTATICOS: Record<string, () => FhirCodeSystem> = {
 
 // ---------------------------------------------------------------- Bundle y errores
 
-export function bundleSearchset<T extends { resourceType: string; id: string }>(
+export function bundleSearchset<T extends { resourceType: string; id?: string | undefined }>(
   recursos: T[],
   baseUrl: string,
 ): FhirBundle<T> {
@@ -223,7 +223,10 @@ export function bundleSearchset<T extends { resourceType: string; id: string }>(
     resourceType: 'Bundle',
     type: 'searchset',
     total: recursos.length,
-    entry: recursos.map((r) => ({ fullUrl: `${baseUrl}/${r.resourceType}/${r.id}`, resource: r })),
+    entry: recursos.map((r) => ({
+      fullUrl: `${baseUrl}/${r.resourceType}/${r.id ?? ''}`,
+      resource: r,
+    })),
   };
 }
 

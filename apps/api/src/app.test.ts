@@ -254,6 +254,8 @@ describe('API: autenticación y autorización', () => {
   });
 });
 
+const CLAVE = Buffer.alloc(32, 7).toString('base64');
+
 describe('cargarConfig', () => {
   it('usa DEMO por defecto y rechaza valores inválidos', () => {
     expect(cargarConfig({}).ambiente).toBe('DEMO');
@@ -262,11 +264,18 @@ describe('cargarConfig', () => {
   });
   it('en PRODUCCION exige https en el emisor de Keycloak', () => {
     expect(() =>
-      cargarConfig({ AMBIENTE: 'PRODUCCION', KEYCLOAK_ISSUER: 'http://kc/realms/x' }),
+      cargarConfig({
+        AMBIENTE: 'PRODUCCION',
+        KEYCLOAK_ISSUER: 'http://kc/realms/x',
+        DATA_ENCRYPTION_KEY: CLAVE,
+      }),
     ).toThrow(/https/);
     expect(
-      cargarConfig({ AMBIENTE: 'PRODUCCION', KEYCLOAK_ISSUER: 'https://kc/realms/x' }).keycloak
-        .issuer,
+      cargarConfig({
+        AMBIENTE: 'PRODUCCION',
+        KEYCLOAK_ISSUER: 'https://kc/realms/x',
+        DATA_ENCRYPTION_KEY: CLAVE,
+      }).keycloak.issuer,
     ).toBe('https://kc/realms/x');
   });
   it('deriva el JWKS del emisor salvo que se indique otro', () => {

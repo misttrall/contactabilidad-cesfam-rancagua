@@ -69,9 +69,9 @@ describe('Bundle y CapabilityStatement', () => {
     expect(b.total).toBe(1);
     expect(b.entry[0]?.fullUrl).toBe('http://x/fhir/R4/Organization/c-1');
   });
-  it('solo declara recursos implementados en S1 (no Appointment todavía)', () => {
+  it('solo declara recursos implementados (no Task ni AppointmentResponse todavía)', () => {
     const tipos = RECURSOS_SOPORTADOS.map((r) => r.type);
-    expect(tipos).not.toContain('Appointment');
+    expect(tipos).not.toContain('Task');
     expect(tipos).toContain('Organization');
   });
 });

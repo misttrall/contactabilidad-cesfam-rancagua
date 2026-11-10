@@ -26,6 +26,8 @@ model Centro {
   creadoEn      DateTime      @default(now()) @db.Timestamptz(6)
   usuarios      Usuario[]
   profesionales Profesional[]
+  citas         Cita[]
+  cargas        Carga[]
 
   @@map("centro")
 }
@@ -54,6 +56,7 @@ model Profesional {
   centroId     String  @db.Uuid
   centro       Centro  @relation(fields: [centroId], references: [id])
   activo       Boolean @default(true)
+  citas        Cita[]
 
   @@index([centroId])
   @@map("profesional")
@@ -98,4 +101,108 @@ model AuditEvent {
   @@index([usuarioId])
   @@index([accion])
   @@map("audit_event")
+}
+
+// ============================================================================ S2: citas y cargas
+
+enum TipoCita {
+  cronico
+  morbilidad
+}
+
+/// Estado de contactabilidad (informe 4.3). El estado del proceso vive aquí; la agenda es de AVIS.
+enum EstadoContacto {
+  sin_enviar
+  enviado
+  confirmado
+  sin_respuesta
+  cancelado
+}
+
+enum SubestadoContacto {
+  recado
+  no_ubicado
+}
+
+enum SexoPaciente {
+  M
+  F
+}
+
+/// Datos de contacto del paciente. RUT único. El teléfono se guarda cifrado a nivel de aplicación
+/// (AES-256-GCM); el resto depende del cifrado en reposo del disco/BD (S6).
+model Paciente {
+  id              String        @id @default(uuid()) @db.Uuid
+  rut             String        @unique
+  nombre          String
+  telefonoCifrado String?
+  fechaNacimiento DateTime?     @db.Date
+  sexo            SexoPaciente?
+  creadoEn        DateTime      @default(now()) @db.Timestamptz(6)
+  actualizadoEn   DateTime      @updatedAt @db.Timestamptz(6)
+  citas           Cita[]
+
+  @@map("paciente")
+}
+
+model Cita {
+  id                String         @id @default(uuid()) @db.Uuid
+  centroId          String         @db.Uuid
+  centro            Centro         @relation(fields: [centroId], references: [id])
+  pacienteId        String         @db.Uuid
+  paciente          Paciente       @relation(fields: [pacienteId], references: [id])
+  profesionalId     String?        @db.Uuid
+  profesional       Profesional?   @relation(fields: [profesionalId], references: [id])
+  /// Texto tal como viene de AVIS (el profesional puede no existir aún en el catálogo).
+  profesionalNombre String
+  /// Versión normalizada (sin tildes, minúsculas) para la clave de idempotencia.
+  profesionalClave  String
+  fecha             DateTime       @db.Date
+  hora              String
+  prestacion        String
+  tipo              TipoCita
+  cargaId           String         @db.Uuid
+  carga             Carga          @relation(fields: [cargaId], references: [id])
+  creadoEn          DateTime       @default(now()) @db.Timestamptz(6)
+  tarea             TareaContacto?
+
+  /// Recargar la misma planilla no duplica citas.
+  @@unique([centroId, pacienteId, fecha, hora, profesionalClave])
+  @@index([centroId, fecha])
+  @@map("cita")
+}
+
+/// Estado del flujo de confirmación de una cita (1:1). Se mapea a FHIR Task (ADR-001 §2.4).
+model TareaContacto {
+  id            String             @id @default(uuid()) @db.Uuid
+  citaId        String             @unique @db.Uuid
+  cita          Cita               @relation(fields: [citaId], references: [id], onDelete: Cascade)
+  estado        EstadoContacto     @default(sin_enviar)
+  subestado     SubestadoContacto?
+  actualizadoEn DateTime           @updatedAt @db.Timestamptz(6)
+
+  @@index([estado])
+  @@map("tarea_contacto")
+}
+
+/// Metadatos de cada importación. NO guarda el archivo ni su nombre (puede contener datos).
+model Carga {
+  id                 String   @id @default(uuid()) @db.Uuid
+  centroId           String   @db.Uuid
+  centro             Centro   @relation(fields: [centroId], references: [id])
+  /// `sub` de Keycloak de quien importó.
+  usuarioId          String
+  creadaEn           DateTime @default(now()) @db.Timestamptz(6)
+  filasTotales       Int
+  filasValidas       Int
+  citasCreadas       Int
+  citasExistentes    Int
+  morbilidadExcluida Int
+  repetidasEnArchivo Int
+  erroresTotal       Int
+  excluyoMorbilidad  Boolean
+  citas              Cita[]
+
+  @@index([centroId, creadaEn])
+  @@map("carga")
 }

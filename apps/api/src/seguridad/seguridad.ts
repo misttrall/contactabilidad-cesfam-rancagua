@@ -3,24 +3,9 @@ import type { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import type { Config } from '../config';
 import { limitarTasa } from './limite-tasa';
+import { LIMITES } from './limites';
 
-/**
- * Límites por defecto (por IP, ventana de 1 minuto salvo indicación). Se eligieron holgados para
- * el uso normal (≈150 contactos por funcionaria al día) y cerrados para abuso o fuerza bruta.
- */
-export const LIMITES = {
-  general: { ventanaMs: 60_000, max: 600 },
-  /** Cargas de planilla: operación pesada. */
-  cargas: { ventanaMs: 60_000, max: 10 },
-  /** Revelar RUT/teléfono: dato sensible; el volumen normal es bajo. */
-  revelar: { ventanaMs: 60_000, max: 60 },
-  /** Envíos masivos y simulación. */
-  envios: { ventanaMs: 60_000, max: 20 },
-  /** Exportación de reportes. */
-  exportar: { ventanaMs: 60_000, max: 10 },
-  /** Webhook de Meta: puede ráfagas grandes; se protege por IP pero con holgura. */
-  webhook: { ventanaMs: 60_000, max: 3_000 },
-} as const;
+export { LIMITES };
 
 /** CSP de la API: responde solo JSON/binario, así que no necesita cargar nada. */
 export const CSP_API = {
@@ -78,11 +63,10 @@ function cuando(
 /** Endurecimiento HTTP de la API (RNF-06/07, ASVS V14): cabeceras, caché, FHIR y límites de tasa. */
 export function aplicarSeguridad(app: INestApplication, config: Config): void {
   // Detrás de proxy/balanceador la IP real viene en X-Forwarded-For; si no, nunca confiar en esa cabecera.
-  const saltos = Number(process.env.TRUST_PROXY ?? 0);
-  if (Number.isInteger(saltos) && saltos > 0) {
+  if (config.trustProxy > 0) {
     (app.getHttpAdapter().getInstance() as { set(k: string, v: unknown): void }).set(
       'trust proxy',
-      saltos,
+      config.trustProxy,
     );
   }
   const enProduccionLike = config.ambiente !== 'DEMO';
@@ -103,24 +87,16 @@ export function aplicarSeguridad(app: INestApplication, config: Config): void {
 
   if (!config.limitesTasa) return;
 
-  const l = (n: keyof typeof LIMITES) => limitarTasa({ nombre: n, ...LIMITES[n] });
+  // Antes de autenticar solo se cuenta por IP y con topes altos: un Cesfam comparte una IP pública y
+  // un cliente sin sesión no debe poder agotar el cupo de todas las funcionarias. Los límites finos
+  // (cargas, revelar, envíos, exportar) son POR USUARIO y viven en LimiteUsuarioGuard.
   app.use(
     cuando(
       (req) => !req.path.startsWith('/health') && !req.path.startsWith('/webhooks/'),
-      limitarTasa({ nombre: 'general', ...LIMITES.general }),
+      limitarTasa({ nombre: 'ip', ...LIMITES.ip }),
     ),
   );
-  app.use(cuando(porRuta('/api/cargas', 'POST'), l('cargas')));
-  app.use(cuando((r) => r.method === 'POST' && /\/revelar$/.test(r.path), l('revelar')));
-  // Solo crear el envío y la simulación: previsualizar y consultar son de uso normal y frecuente.
   app.use(
-    cuando(
-      (r) =>
-        r.method === 'POST' &&
-        (r.path === '/api/envios' || r.path === '/api/envios/simular-respuestas'),
-      l('envios'),
-    ),
+    cuando(porRuta('/webhooks/whatsapp'), limitarTasa({ nombre: 'webhook', ...LIMITES.webhook })),
   );
-  app.use(cuando(porRuta('/api/reportes/exportar'), l('exportar')));
-  app.use(cuando(porRuta('/webhooks/whatsapp'), l('webhook')));
 }

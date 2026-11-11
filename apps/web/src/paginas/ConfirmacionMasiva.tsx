@@ -1,3 +1,4 @@
+import { TablaScroll } from '../componentes/TablaScroll';
 import { useQueryClient } from '@tanstack/react-query';
 import { HeartHandshake, Send, TriangleAlert } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
@@ -246,12 +247,7 @@ export function ConfirmacionMasiva() {
               No hay citas {tipo !== 'todos' ? 'de ese tipo ' : ''}para esa fecha.
             </p>
           ) : (
-            <div
-              className="tabla-scroll"
-              role="region"
-              tabIndex={0}
-              aria-label="Tabla con desplazamiento"
-            >
+            <TablaScroll etiqueta="Citas del día">
               <table className="tabla">
                 <thead>
                   <tr>
@@ -324,7 +320,7 @@ export function ConfirmacionMasiva() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TablaScroll>
           )}
 
           <div className="barra-seleccion" role="region" aria-label="Acciones sobre la selección">
@@ -410,12 +406,7 @@ export function ConfirmacionMasiva() {
             Estos pacientes respondieron «No podré asistir». AVIS es el dueño de la agenda: libera
             la hora allí y márcala aquí.
           </p>
-          <div
-            className="tabla-scroll"
-            role="region"
-            tabIndex={0}
-            aria-label="Tabla con desplazamiento"
-          >
+          <TablaScroll etiqueta="Horas por liberar en AVIS">
             <table className="tabla">
               <thead>
                 <tr>
@@ -451,7 +442,7 @@ export function ConfirmacionMasiva() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TablaScroll>
         </section>
       )}
 

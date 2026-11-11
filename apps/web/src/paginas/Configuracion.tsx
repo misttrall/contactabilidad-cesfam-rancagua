@@ -1,3 +1,4 @@
+import { TablaScroll } from '../componentes/TablaScroll';
 import { ArrowDown, ArrowUp, CircleCheck, CircleSlash, TriangleAlert } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { ETIQUETA_ROL, ROLES, type Rol } from '@bh/shared';
@@ -455,12 +456,7 @@ function Usuarios() {
             Contraseñas y acceso se administran en Keycloak; aquí se asigna el rol y el centro. Al
             guardar, se cierra la sesión del usuario para que el cambio rija de inmediato.
           </p>
-          <div
-            className="tabla-scroll"
-            role="region"
-            tabIndex={0}
-            aria-label="Tabla con desplazamiento"
-          >
+          <TablaScroll etiqueta="Usuarios del sistema">
             <table className="tabla">
               <thead>
                 <tr>
@@ -483,7 +479,7 @@ function Usuarios() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TablaScroll>
         </>
       )}
     </>

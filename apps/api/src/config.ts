@@ -14,6 +14,8 @@ export interface Config {
   clavesDatosAnteriores: Buffer[];
   /** Límites de tasa de la API. Solo se pueden apagar fuera de PRODUCCION (pruebas de integración). */
   limitesTasa: boolean;
+  /** Nº de proxies de confianza delante de la API (0 = ninguno): da la IP real en límites y auditoría. */
+  trustProxy: number;
   /** Meses que se conservan los datos personales tras la última cita antes de anonimizarlos. */
   retencionMeses: number;
   /** Redis para la cola de envíos. Sin él, la cola corre en memoria (solo desarrollo y pruebas). */
@@ -74,6 +76,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
     clavesDatosAnteriores: leerClavesAnteriores(env),
     retencionMeses: leerRetencion(env),
     limitesTasa: leerLimitesTasa(env, ambiente),
+    trustProxy: leerTrustProxy(env),
     redisUrl: env.REDIS_URL || undefined,
     barridoMs,
     whatsapp,
@@ -117,6 +120,14 @@ function leerLimitesTasa(env: NodeJS.ProcessEnv, ambiente: Ambiente): boolean {
     throw new Error('LIMITE_TASA=off no está permitido en PRODUCCION');
   }
   return !apagado;
+}
+
+function leerTrustProxy(env: NodeJS.ProcessEnv): number {
+  const n = Number(env.TRUST_PROXY ?? 0);
+  if (!Number.isInteger(n) || n < 0 || n > 10) {
+    throw new Error(`TRUST_PROXY inválido: "${env.TRUST_PROXY}" (entero de 0 a 10: nº de proxies)`);
+  }
+  return n;
 }
 
 function leerRetencion(env: NodeJS.ProcessEnv): number {

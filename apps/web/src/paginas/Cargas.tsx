@@ -1,3 +1,4 @@
+import { TablaScroll } from '../componentes/TablaScroll';
 import { Link } from '@tanstack/react-router';
 import { CircleCheck, Download, FileSpreadsheet, Info, TriangleAlert } from 'lucide-react';
 import { useId, useState } from 'react';
@@ -256,12 +257,7 @@ export function Cargas() {
           {resumen.vistaPrevia.length > 0 && (
             <>
               <h2>Vista previa</h2>
-              <div
-                className="tabla-scroll"
-                role="region"
-                tabIndex={0}
-                aria-label="Tabla con desplazamiento"
-              >
+              <TablaScroll etiqueta="Vista previa de la planilla">
                 <table className="tabla">
                   <thead>
                     <tr>
@@ -296,7 +292,7 @@ export function Cargas() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TablaScroll>
             </>
           )}
 
@@ -307,12 +303,7 @@ export function Cargas() {
                 Las filas con errores no se importan. Muestra {resumen.errores.length} de{' '}
                 {resumen.erroresTotal}.
               </p>
-              <div
-                className="tabla-scroll"
-                role="region"
-                tabIndex={0}
-                aria-label="Tabla con desplazamiento"
-              >
+              <TablaScroll etiqueta="Errores de la planilla">
                 <table className="tabla">
                   <thead>
                     <tr>
@@ -331,7 +322,7 @@ export function Cargas() {
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </TablaScroll>
             </>
           )}
 
@@ -397,12 +388,7 @@ export function Cargas() {
         <p className="texto-secundario">Todavía no hay cargas.</p>
       )}
       {resumenCargas.data && resumenCargas.data.historial.length > 0 && (
-        <div
-          className="tabla-scroll"
-          role="region"
-          tabIndex={0}
-          aria-label="Tabla con desplazamiento"
-        >
+        <TablaScroll etiqueta="Historial de cargas">
           <table className="tabla">
             <thead>
               <tr>
@@ -425,7 +411,7 @@ export function Cargas() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TablaScroll>
       )}
     </section>
   );

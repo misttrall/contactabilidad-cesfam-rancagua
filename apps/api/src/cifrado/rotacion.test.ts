@@ -14,6 +14,7 @@ interface Fila {
   telefonoCifrado: string | null;
   telefonoHash: string | null;
 }
+const escrituras = { n: 0 };
 function almacen(filas: Fila[]): AlmacenRotacion {
   return {
     paciente: {
@@ -22,8 +23,13 @@ function almacen(filas: Fila[]): AlmacenRotacion {
           .filter((f) => f.telefonoCifrado !== null && (!where.id || f.id > where.id.gt))
           .sort((a, b) => a.id.localeCompare(b.id))
           .slice(0, take)
-          .map((f) => ({ id: f.id, telefonoCifrado: f.telefonoCifrado })),
+          .map((f) => ({
+            id: f.id,
+            telefonoCifrado: f.telefonoCifrado,
+            telefonoHash: f.telefonoHash,
+          })),
       update: async ({ where, data }) => {
+        escrituras.n += 1;
         Object.assign(
           filas.find((f) => f.id === where.id)!,
           data,
@@ -61,7 +67,9 @@ describe('rotarClaves', () => {
     const filas = crear();
     const nuevo = svc(k2, [k1]);
     await rotarClaves(almacen(filas), nuevo);
+    escrituras.n = 0;
     expect((await rotarClaves(almacen(filas), nuevo)).rotados).toBe(0);
+    expect(escrituras.n).toBe(0); // la segunda pasada no reescribe nada
   });
 
   it('simular no modifica datos', async () => {

@@ -4,7 +4,8 @@
 //   node infra/keycloak/generar-realm.mjs --web https://app.ejemplo.cl --admin-secret-env KC_ADMIN_SECRET > realm-qa.json
 //
 // Diferencias respecto del realm de desarrollo:
-//  - sin usuarios (ni el service-account de desarrollo): los usuarios reales se crean en Keycloak;
+//  - sin usuarios de prueba (solo queda el usuario de servicio de `businesshub-admin`, con sus roles de
+//    administración de usuarios); los usuarios reales se crean en Keycloak;
 //  - sin el cliente `businesshub-dev-cli` (contraseña directa solo para pruebas locales);
 //  - SSL obligatorio (`sslRequired: all`) y redirecciones solo a la URL https indicada;
 //  - MFA (TOTP) obligatorio para todos y política de contraseñas;
@@ -33,7 +34,8 @@ export function generarRealm(dev, o) {
   realm.registrationAllowed = false;
   realm.resetPasswordAllowed = true;
   realm.bruteForceProtected = true;
-  realm.users = [];
+  // Solo se conserva el usuario de servicio del cliente admin: lleva el rol manage-users que la API necesita.
+  realm.users = (realm.users ?? []).filter((u) => u.serviceAccountClientId === CLIENTE_ADMIN);
   realm.clients = realm.clients.filter((c) => c.clientId !== CLIENTE_DEV);
 
   for (const c of realm.clients) {

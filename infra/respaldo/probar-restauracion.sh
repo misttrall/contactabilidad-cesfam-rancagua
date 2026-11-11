@@ -27,13 +27,37 @@ huella() {
   done
 }
 
-ARCHIVO="$("$AQUI/respaldar.sh" "$DIR")"
-echo "Respaldo: $(basename "$ARCHIVO") ($(wc -c < "$ARCHIVO") bytes)"
-"$AQUI/restaurar.sh" "$ARCHIVO" "$TEMP_BD"
 cleanup() { psql_en postgres "DROP DATABASE IF EXISTS \"$TEMP_BD\"" >/dev/null 2>&1 || true; }
 trap 'cleanup; rm -rf "$DIR"' EXIT
 
-ORIGEN="$(huella "$BD")"
+# En una base con escritura continua (auditoría, mensajes) la huella cambia entre el respaldo y la
+# comparación y daría un falso fallo. Se toma la huella ANTES y DESPUÉS del respaldo: solo si el
+# origen no cambió durante el respaldo la comparación es válida; si cambió, se reintenta.
+# Si no hay un momento tranquilo, ejecutar sobre una réplica (PGHOST) o en una ventana sin tráfico.
+INTENTOS="${INTENTOS:-3}"
+OK=0
+for n in $(seq 1 "$INTENTOS"); do
+  ANTES="$(huella "$BD")"
+  ARCHIVO="$("$AQUI/respaldar.sh" "$DIR")"
+  DESPUES="$(huella "$BD")"
+  if [ "$ANTES" != "$DESPUES" ]; then
+    echo "Intento $n/$INTENTOS: la base cambió durante el respaldo; se reintenta." >&2
+    rm -f "$ARCHIVO" "$ARCHIVO.sha256"
+    continue
+  fi
+  echo "Respaldo: $(basename "$ARCHIVO") ($(wc -c < "$ARCHIVO") bytes)"
+  cleanup
+  "$AQUI/restaurar.sh" "$ARCHIVO" "$TEMP_BD"
+  ORIGEN="$ANTES"
+  OK=1
+  break
+done
+if [ "$OK" != 1 ]; then
+  echo "No hubo un momento sin escrituras en $INTENTOS intentos: no se puede comparar de forma fiable." >&2
+  echo "Ejecutar sobre una réplica o en una ventana sin tráfico (no es un fallo del respaldo)." >&2
+  exit 3
+fi
+
 RESTAURADO="$(huella "$TEMP_BD")"
 if [ "$ORIGEN" != "$RESTAURADO" ]; then
   echo "LA RESTAURACIÓN NO COINCIDE CON EL ORIGEN:" >&2

@@ -1,3 +1,4 @@
+import { TablaScroll } from '../componentes/TablaScroll';
 import { HeartHandshake, Info, PhoneCall } from 'lucide-react';
 import { useState } from 'react';
 import {
@@ -254,12 +255,7 @@ export function Pendientes() {
           <p className="texto-secundario" aria-live="polite">
             {filas.length} {filas.length === 1 ? 'paciente pendiente' : 'pacientes pendientes'}
           </p>
-          <div
-            className="tabla-scroll"
-            role="region"
-            tabIndex={0}
-            aria-label="Tabla con desplazamiento"
-          >
+          <TablaScroll etiqueta="Pacientes pendientes por llamar">
             <table className="tabla">
               <thead>
                 <tr>
@@ -327,7 +323,7 @@ export function Pendientes() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TablaScroll>
         </>
       )}
 

@@ -10,7 +10,13 @@ const gen = (o = {}) =>
 
 test('no deja usuarios, contraseñas de desarrollo ni el cliente dev-cli', () => {
   const r = gen();
-  assert.deepEqual(r.users, []);
+  // Único usuario permitido: la cuenta de servicio del cliente admin, con sus roles de gestión de usuarios.
+  assert.deepEqual(
+    r.users.map((u) => u.serviceAccountClientId),
+    ['businesshub-admin'],
+  );
+  assert.ok(r.users[0].clientRoles['realm-management'].includes('manage-users'));
+  assert.ok(!r.users.some((u) => /demo|funcionaria|encargado/.test(u.username)));
   assert.ok(!r.clients.some((c) => c.clientId === 'businesshub-dev-cli'));
   const texto = JSON.stringify(r);
   assert.ok(!texto.includes('Demo-1234'));

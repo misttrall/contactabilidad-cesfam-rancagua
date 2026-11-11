@@ -82,12 +82,26 @@ export class CifradoService {
     return Buffer.concat([d.update(Buffer.from(ct, 'base64')), d.final()]).toString('utf8');
   }
 
+  private huella(clave: Buffer, texto: string): string {
+    const derivada = Buffer.from(hkdfSync('sha256', clave, '', 'bh-busqueda-v1', 32));
+    return createHmac('sha256', derivada).update(texto).digest('hex');
+  }
+
   /**
    * Huella determinista para BUSCAR sin descifrar (p. ej. ubicar al paciente que responde desde un
    * teléfono). HMAC-SHA256 con una clave derivada: sin la clave no se puede invertir ni adivinar.
    */
   hashBusqueda(texto: string): string {
-    const clave = Buffer.from(hkdfSync('sha256', this.config.claveDatos, '', 'bh-busqueda-v1', 32));
-    return createHmac('sha256', clave).update(texto).digest('hex');
+    return this.huella(this.config.claveDatos, texto);
+  }
+
+  /**
+   * Huellas con la clave actual Y las anteriores (la actual primero). Para BUSCAR durante una
+   * rotación: hasta que `rotar-claves` termine, parte de los pacientes sigue guardada con la huella
+   * de la clave vieja.
+   */
+  hashesBusqueda(texto: string): string[] {
+    const claves = [this.config.claveDatos, ...(this.config.clavesDatosAnteriores ?? [])];
+    return [...new Set(claves.map((k) => this.huella(k, texto)))];
   }
 }

@@ -19,7 +19,7 @@ Todo se aloja en una **región de Chile** del proveedor (residencia de datos), e
 
 Referencia en `infra/despliegue/` (Docker Compose; el mismo diseño sirve en Kubernetes).
 
-1. **Secretos:** copiar `infra/despliegue/.env.qa.example` a `.env.qa` y completarlo con valores del gestor de secretos (`openssl rand -base64 32`). `.env.qa` no se versiona.
+1. **Secretos:** copiar `infra/despliegue/.env.qa.example` a `.env.qa` y completarlo con valores del gestor de secretos (contraseñas de Postgres y Redis: `openssl rand -hex 32`, porque van dentro de una URL; claves AES: `openssl rand -base64 32`). `.env.qa` no se versiona.
 2. **Realm de Keycloak (sin usuarios de prueba, con MFA):**
    ```bash
    KC_ADMIN_SECRET=<el mismo de .env.qa> node infra/keycloak/generar-realm.mjs \
@@ -60,7 +60,7 @@ Referencia en `infra/despliegue/` (Docker Compose; el mismo diseño sirve en Kub
 
 | Secreto | Cada | Procedimiento |
 |---|---|---|
-| `DATA_ENCRYPTION_KEY` (teléfonos) | 12 meses o ante sospecha de filtración | 1) generar clave nueva; 2) poner la **nueva** en `DATA_ENCRYPTION_KEY` y la **vieja** en `DATA_ENCRYPTION_KEY_ANTERIORES`; 3) reiniciar la API; 4) `pnpm --filter @bh/api rotar-claves --simular` y luego sin `--simular` (re-cifra y recalcula la huella de búsqueda; es idempotente y reanudable); 5) cuando `fallidos=0`, retirar la clave vieja. Los datos cifrados llevan el id de su clave (`v2:<id>:…`). |
+| `DATA_ENCRYPTION_KEY` (teléfonos) | 12 meses o ante sospecha de filtración | 1) generar clave nueva (mientras dura la rotación las búsquedas por teléfono, p. ej. respuestas de WhatsApp, prueban también las huellas de la clave vieja); 2) poner la **nueva** en `DATA_ENCRYPTION_KEY` y la **vieja** en `DATA_ENCRYPTION_KEY_ANTERIORES`; 3) reiniciar la API; 4) `pnpm --filter @bh/api rotar-claves --simular` y luego sin `--simular` (re-cifra y recalcula la huella de búsqueda; es idempotente y reanudable); 5) cuando `fallidos=0`, retirar la clave vieja. Los datos cifrados llevan el id de su clave (`v2:<id>:…`). |
 | Clave de respaldos | 12 meses | Se genera una nueva y se usa para los respaldos siguientes; **conservar la anterior mientras existan respaldos cifrados con ella**. |
 | `KC_ADMIN_SECRET` (cliente `businesshub-admin`) | 6 meses | Cambiar en Keycloak (Clients → businesshub-admin → Credentials) y en el gestor; reiniciar la API. |
 | `WHATSAPP_TOKEN`, `WHATSAPP_APP_SECRET`, `WHATSAPP_VERIFY_TOKEN` | según Meta / ante sospecha | Regenerar en Meta Business, actualizar el gestor, reiniciar la API (el webhook rechaza firmas del secreto anterior). |
@@ -83,7 +83,7 @@ Ante una **filtración**: rotar de inmediato el secreto afectado y seguir el [pl
 
 - **Salud:** `GET /health` (API) y `GET /healthz` (web) para el balanceador. Alertar si hay 5xx sostenidos, la cola de envíos crece sin drenar o falla el webhook de WhatsApp.
 - **Registros (logs):** la API no escribe RUT, teléfonos ni nombres (DoD §5 del plan); los errores del proveedor de WhatsApp guardan solo el código. Retención de logs: 90 días.
-- **Límites de tasa** (por IP, 1 min): general 600; cargas 10; revelar RUT/teléfono 60; crear envíos 20; exportar reportes 10; webhook 3 000. Un 429 trae `Retry-After`. Con **más de una instancia** de la API los contadores en memoria no se comparten: pasar el limitador a Redis antes de escalar horizontalmente.
+- **Límites de tasa** (ventana de 1 min): **por usuario autenticado** general 600, cargas 10, revelar RUT/teléfono 60, crear envíos 20, exportar reportes 10; **por IP** solo como freno de inundación antes de autenticar (3 000; un Cesfam comparte IP pública, por eso no se limita fino por IP) y el webhook (3 000). Un 429 trae `Retry-After`. Con **más de una instancia** de la API los contadores en memoria no se comparten: pasar el limitador a Redis antes de escalar horizontalmente. `TRUST_PROXY` (nº de proxies, validado al arrancar) hace que la API vea la IP real.
 - **Incidente de seguridad o de datos personales:** seguir [PLAN_BRECHAS.md](privacidad/PLAN_BRECHAS.md).
 - **WhatsApp caído o sin plantilla aprobada:** los envíos fallan con un código y quedan visibles; las citas pasan a la lista de llamadas (RN-01: nunca se cancelan por falta de respuesta).
 

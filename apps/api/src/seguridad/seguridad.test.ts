@@ -1,9 +1,10 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { cargarConfig } from '../config';
+import { cargarConfig, type Config } from '../config';
 import { crearAppDePrueba } from '../pruebas/ayudas';
 import { limitarTasa } from './limite-tasa';
+import { LimiteUsuarioGuard } from './limite-usuario.guard';
 
 /** Ejecuta el middleware con un req/res mínimos y devuelve lo que respondió. */
 function golpear(
@@ -124,6 +125,78 @@ describe('endurecimiento HTTP de la API', () => {
     const res = await http().get('/health');
     expect(res.headers['ratelimit-limit']).toBeUndefined();
     const api = await http().get('/api/me');
-    expect(api.headers['ratelimit-limit']).toBe('600');
+    expect(api.headers['ratelimit-limit']).toBe('3000'); // por IP antes de autenticar
+  });
+});
+
+describe('LimiteUsuarioGuard (límites por usuario, no por IP)', () => {
+  const config = (limitesTasa = true) => ({ limitesTasa }) as Config;
+  const ctx = (sub: string | null, metodo: string, ruta: string, ip = '10.0.0.1') => {
+    const cab: Record<string, string> = {};
+    const req = { method: metodo, path: ruta, ip, ...(sub ? { sesion: { id: sub } } : {}) };
+    const res = { setHeader: (k: string, v: string) => void (cab[k] = v) };
+    return {
+      cab,
+      c: { switchToHttp: () => ({ getRequest: () => req, getResponse: () => res }) } as never,
+    };
+  };
+  const intentar = (g: LimiteUsuarioGuard, c: never) => {
+    try {
+      return g.canActivate(c);
+    } catch (e) {
+      return (e as { getStatus(): number }).getStatus();
+    }
+  };
+
+  it('dos funcionarias con la MISMA IP no comparten cupo', () => {
+    const g = new LimiteUsuarioGuard(config());
+    for (let i = 0; i < 60; i++)
+      expect(intentar(g, ctx('ana', 'POST', '/api/pacientes/1/revelar').c)).toBe(true);
+    expect(intentar(g, ctx('ana', 'POST', '/api/pacientes/1/revelar').c)).toBe(429);
+    // misma IP, otra persona: sigue pudiendo trabajar
+    expect(intentar(g, ctx('beto', 'POST', '/api/pacientes/1/revelar').c)).toBe(true);
+  });
+
+  it('cargas: 10 por minuto por usuario; consultar no consume ese cupo', () => {
+    const g = new LimiteUsuarioGuard(config());
+    for (let i = 0; i < 10; i++)
+      expect(intentar(g, ctx('ana', 'POST', '/api/cargas').c)).toBe(true);
+    expect(intentar(g, ctx('ana', 'POST', '/api/cargas').c)).toBe(429);
+    expect(intentar(g, ctx('ana', 'GET', '/api/cargas').c)).toBe(true);
+  });
+
+  it('previsualizar un envío no cuenta como crear un envío', () => {
+    const g = new LimiteUsuarioGuard(config());
+    for (let i = 0; i < 30; i++) {
+      expect(intentar(g, ctx('ana', 'POST', '/api/envios/previsualizar').c)).toBe(true);
+    }
+  });
+
+  it('sin sesión (ruta pública) no cuenta; sin límites activos tampoco', () => {
+    const g = new LimiteUsuarioGuard(config());
+    for (let i = 0; i < 700; i++) expect(intentar(g, ctx(null, 'GET', '/health').c)).toBe(true);
+    const apagado = new LimiteUsuarioGuard(config(false));
+    for (let i = 0; i < 700; i++)
+      expect(intentar(apagado, ctx('ana', 'GET', '/api/me').c)).toBe(true);
+  });
+
+  it('informa los encabezados RateLimit y Retry-After al rechazar', () => {
+    const g = new LimiteUsuarioGuard(config());
+    let ultima = ctx('ana', 'POST', '/api/cargas');
+    for (let i = 0; i < 11; i++) {
+      ultima = ctx('ana', 'POST', '/api/cargas');
+      intentar(g, ultima.c);
+    }
+    expect(ultima.cab['Retry-After']).toBeDefined();
+    expect(ultima.cab['RateLimit-Remaining']).toBe('0');
+  });
+});
+
+describe('TRUST_PROXY', () => {
+  it('es un entero de 0 a 10; valores como "true" fallan al arrancar', () => {
+    expect(cargarConfig({}).trustProxy).toBe(0);
+    expect(cargarConfig({ TRUST_PROXY: '1' }).trustProxy).toBe(1);
+    expect(() => cargarConfig({ TRUST_PROXY: 'true' })).toThrow(/TRUST_PROXY/);
+    expect(() => cargarConfig({ TRUST_PROXY: '-1' })).toThrow(/TRUST_PROXY/);
   });
 });

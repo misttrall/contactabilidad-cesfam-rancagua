@@ -1,3 +1,4 @@
+import { TablaScroll } from '../componentes/TablaScroll';
 import { useState } from 'react';
 import { useActualizarParametro, useParametros, type Parametro } from '../api/consultas';
 
@@ -126,12 +127,7 @@ export function Parametros() {
         </p>
       )}
       {parametros.data && (
-        <div
-          className="tabla-scroll"
-          role="region"
-          tabIndex={0}
-          aria-label="Tabla con desplazamiento"
-        >
+        <TablaScroll etiqueta="Parámetros de envío">
           <table className="tabla">
             <thead>
               <tr>
@@ -148,7 +144,7 @@ export function Parametros() {
               ))}
             </tbody>
           </table>
-        </div>
+        </TablaScroll>
       )}
     </>
   );

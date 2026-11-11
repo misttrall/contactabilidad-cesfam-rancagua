@@ -4,6 +4,7 @@ import { AdministracionController } from './administracion/administracion.contro
 import { DemoService } from './administracion/demo.service';
 import { AuditoriaService } from './auditoria/auditoria.service';
 import { AuthGuard } from './auth/auth.guard';
+import { LimiteUsuarioGuard } from './seguridad/limite-usuario.guard';
 import { Publico } from './auth/decoradores';
 import { ModuloGuard } from './auth/modulo.guard';
 import { crearVerificadorKeycloak } from './auth/verificador';
@@ -130,6 +131,7 @@ export class SaludController {
     DemoService,
     // Orden importa: primero autenticación, luego autorización por módulo.
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_GUARD, useClass: LimiteUsuarioGuard },
     { provide: APP_GUARD, useClass: ModuloGuard },
   ],
 })

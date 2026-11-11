@@ -299,6 +299,34 @@ describe.skipIf(!URL_PRUEBAS)('Privacidad (PostgreSQL real)', () => {
     expect(ev.detalle).toEqual({ motivo: 'Solicitud ARCO folio 12' });
   });
 
+  it('la supresión también anonimiza las llamadas de su RUT sin paciente enlazado', async () => {
+    const p = await crearPaciente(30);
+    const motivo = await prisma.motivoLlamada.findFirstOrThrow();
+    const suelta = await prisma.llamadaEntrante.create({
+      data: {
+        centroId,
+        rut: p.rut,
+        motivoId: motivo.id,
+        observacion: 'dato libre suelto',
+        usuarioId: 'u',
+      },
+    });
+    const datos = await http()
+      .get(`/api/config/privacidad/pacientes/${p.id}/datos`)
+      .set('Authorization', await admin())
+      .expect(200);
+    expect(datos.body.llamadasEntrantes).toHaveLength(2); // la enlazada y la suelta
+    await http()
+      .post(`/api/config/privacidad/pacientes/${p.id}/suprimir`)
+      .set('Authorization', await admin())
+      .send({ motivo: 'Solicitud ARCO folio 99', confirmacion: 'SUPRIMIR' })
+      .expect(201);
+    const despues = await prisma.llamadaEntrante.findUniqueOrThrow({ where: { id: suelta.id } });
+    expect(despues.rut.startsWith(PREFIJO_ANON)).toBe(true);
+    expect(despues.observacion).toBeNull();
+    expect(await prisma.llamadaEntrante.count({ where: { rut: p.rut } })).toBe(0);
+  });
+
   it('anonimiza llamadas entrantes antiguas que nunca tuvieron paciente', async () => {
     const motivo = await prisma.motivoLlamada.findFirstOrThrow();
     const l = await prisma.llamadaEntrante.create({

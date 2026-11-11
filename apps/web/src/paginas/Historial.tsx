@@ -1,3 +1,4 @@
+import { TablaScroll } from '../componentes/TablaScroll';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useState } from 'react';
 import { useCentros, useHistorialLlamadas, useMe, useMotivos } from '../api/consultas';
@@ -158,12 +159,7 @@ export function Historial() {
           <p className="texto-secundario" aria-live="polite">
             {h.total} {h.total === 1 ? 'llamada' : 'llamadas'} · página {h.pagina} de {h.paginas}
           </p>
-          <div
-            className="tabla-scroll"
-            role="region"
-            tabIndex={0}
-            aria-label="Tabla con desplazamiento"
-          >
+          <TablaScroll etiqueta="Historial de llamadas">
             <table className="tabla">
               <thead>
                 <tr>
@@ -195,7 +191,7 @@ export function Historial() {
                 ))}
               </tbody>
             </table>
-          </div>
+          </TablaScroll>
           <nav className="paginador" aria-label="Paginación">
             <button
               className="bh-boton bh-boton--secundario"

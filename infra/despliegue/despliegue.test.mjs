@@ -44,3 +44,11 @@ test('el Dockerfile web limita envsubst a las variables de la CSP (no rompe $uri
   const d = leer('./Dockerfile.web');
   assert.match(d, /NGINX_ENVSUBST_FILTER="\^\(CSP_API\|CSP_ID\|CSP_FRAME_ANCESTORS\)\$"/);
 });
+
+test('las contraseñas dentro de URLs se piden en hexadecimal (base64 rompe la URL de conexión)', () => {
+  const ej = leer('./.env.qa.example');
+  assert.match(ej, /openssl rand -hex 32/);
+  const compose = leer('./docker-compose.qa.yml');
+  assert.match(compose, /postgresql:\/\/businesshub:\$\{POSTGRES_PASSWORD/);
+  assert.match(compose, /redis:\/\/:\$\{REDIS_PASSWORD/);
+});

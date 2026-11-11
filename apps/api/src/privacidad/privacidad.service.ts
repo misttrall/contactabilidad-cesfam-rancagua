@@ -167,7 +167,7 @@ export class PrivacidadService {
     await this.prisma.$transaction(async (tx) => {
       const p = await tx.paciente.findUnique({
         where: { id },
-        select: { fechaNacimiento: true },
+        select: { fechaNacimiento: true, rut: true },
       });
       if (!p) return;
       const nacimiento =
@@ -186,8 +186,9 @@ export class PrivacidadService {
           whatsappBaja: true,
         },
       });
+      // También las llamadas de ese RUT que nunca se enlazaron al paciente (otros centros o solo RUT).
       await tx.llamadaEntrante.updateMany({
-        where: { pacienteId: id },
+        where: { OR: [{ pacienteId: id }, { rut: p.rut }] },
         data: { rut: anon, observacion: null, otroMotivo: null },
       });
       await tx.llamadaSaliente.updateMany({
@@ -241,6 +242,11 @@ export class PrivacidadService {
       },
     });
     if (!p) throw new NotFoundException('Paciente no encontrado');
+    // Llamadas de su RUT que no quedaron enlazadas al paciente (otro centro o registradas solo con RUT).
+    const sueltas = await this.prisma.llamadaEntrante.findMany({
+      where: { rut: p.rut, pacienteId: null },
+      include: { motivo: { select: { descripcion: true } } },
+    });
     await this.auditoria.registrar({
       usuarioId,
       accion: 'privacidad.acceso',
@@ -283,7 +289,7 @@ export class PrivacidadService {
           creadaEn: l.creadaEn,
         })),
       })),
-      llamadasEntrantes: p.llamadasEntrantes.map((l) => ({
+      llamadasEntrantes: [...p.llamadasEntrantes, ...sueltas].map((l) => ({
         motivo: l.motivo.descripcion,
         otroMotivo: l.otroMotivo,
         observacion: l.observacion,

@@ -49,13 +49,44 @@ test('Flujo A: la funcionaria envía la confirmación, los pacientes responden y
   await expect(page.getByText('Envío terminado.')).toBeVisible({ timeout: 30_000 });
 
   await page.getByRole('button', { name: /Simular respuestas de pacientes/ }).click();
-  await expect(page.getByText(/Simulación: \d+ confirmaron/)).toBeVisible();
+  const texto = await page.getByText(/Simulación: \d+ confirmaron/).innerText();
+  const n = (re: RegExp) => Number(re.exec(texto)?.[1] ?? NaN);
+  const confirmaron = n(/(\d+) confirmaron/);
+  const cancelaron = n(/(\d+) cancelaron/);
+  const sinResponder = n(/(\d+) no respondieron/);
+  expect(confirmaron + cancelaron + sinResponder).toBeGreaterThan(0);
 
-  // RN-01: ninguna cita queda cancelada solo por no responder; los «sin respuesta» van a llamadas.
+  // Los contadores del resumen del día deben reflejar exactamente lo que respondieron los pacientes.
+  const contador = async (estado: string) =>
+    Number(
+      (await page.locator(`strong[aria-label^="${estado}: "]`).getAttribute('aria-label'))!.split(
+        ': ',
+      )[1],
+    );
+  await expect.poll(() => contador('Confirmado')).toBe(confirmaron);
+  // Solo quien dijo «No» queda cancelado; quien no respondió NUNCA se cancela (RN-01).
+  expect(await contador('Cancelado por paciente')).toBe(cancelaron);
+  // Quien no respondió sigue «Enviado · esperando respuesta» (luego pasará a «Sin respuesta · llamar»);
+  // los «bajas» también quedan abiertos, por eso es «al menos».
+  expect(await contador('Enviado · esperando respuesta')).toBeGreaterThanOrEqual(sinResponder);
+  expect(await contador('Sin enviar')).toBe(0);
+  // Las horas que los pacientes liberaron quedan para que AVIS las libere, una por cancelación.
+  if (cancelaron > 0) {
+    await expect(
+      page.getByRole('heading', { name: `Horas por liberar en AVIS (${cancelaron})` }),
+    ).toBeVisible();
+  }
+
+  // El dashboard muestra las mismas cifras.
   await page.getByRole('link', { name: 'Inicio' }).click();
   await expect(page.getByRole('heading', { level: 1, name: /Hola,/ })).toBeVisible();
-  const confirmadas = page.getByLabel('Indicadores del día').getByText('Confirmado').locator('..');
-  await expect(confirmadas).toBeVisible();
+  const kpis = page.getByLabel('Indicadores del día');
+  await expect(kpis.locator('.dato', { hasText: 'Confirmado' }).locator('.dato__valor')).toHaveText(
+    String(confirmaron),
+  );
+  await expect(
+    kpis.locator('.dato', { hasText: 'Cancelado por paciente' }).locator('.dato__valor'),
+  ).toHaveText(String(cancelaron));
 });
 
 test('Flujo B: registrar una llamada entrante en menos de 30 segundos', async ({ page }) => {

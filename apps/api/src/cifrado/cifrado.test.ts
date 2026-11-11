@@ -100,4 +100,11 @@ describe('CifradoService: rotación de claves', () => {
   it('la huella de búsqueda cambia con la clave (por eso la rotación la recalcula)', () => {
     expect(con(k1).hashBusqueda('+56912345678')).not.toBe(con(k2).hashBusqueda('+56912345678'));
   });
+
+  it('hashesBusqueda incluye la huella de la clave actual (primero) y las de las anteriores', () => {
+    const n = con(k2, [k1]);
+    const hs = n.hashesBusqueda('+56912345678');
+    expect(hs).toEqual([n.hashBusqueda('+56912345678'), con(k1).hashBusqueda('+56912345678')]);
+    expect(con(k1).hashesBusqueda('+56912345678')).toHaveLength(1);
+  });
 });

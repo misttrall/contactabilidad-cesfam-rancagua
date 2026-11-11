@@ -172,7 +172,8 @@ export class WebhookService {
   private async entrante(msg: Entrante): Promise<void> {
     if (await this.prisma.mensajeEntrante.findUnique({ where: { proveedorId: msg.id } })) return;
 
-    const telefonoHash = this.cifrado.hashBusqueda(`+${msg.from.replace(/\D/g, '')}`);
+    // Todas las huellas posibles del número (la actual y las de claves anteriores, si hay rotación).
+    const telefonoHash = this.cifrado.hashesBusqueda(`+${msg.from.replace(/\D/g, '')}`);
     let resultado: ResultadoEntrante = 'ignorado';
     let citaId: string | undefined;
 
@@ -186,7 +187,7 @@ export class WebhookService {
       if (m) {
         citaId = m.citaId;
         // Defensa en profundidad: la respuesta debe venir del teléfono al que se le escribió.
-        if (m.paciente.telefonoHash && m.paciente.telefonoHash !== telefonoHash) {
+        if (m.paciente.telefonoHash && !telefonoHash.includes(m.paciente.telefonoHash)) {
           resultado = 'telefono_distinto';
         } else {
           resultado = await this.aplicar(
@@ -203,7 +204,7 @@ export class WebhookService {
       } else if (accion) {
         // Texto libre: solo si ese teléfono tiene UNA cita esperando respuesta (si no, es ambiguo).
         const abiertas = await this.prisma.tareaContacto.findMany({
-          where: { estado: 'enviado', cita: { paciente: { telefonoHash } } },
+          where: { estado: 'enviado', cita: { paciente: { telefonoHash: { in: telefonoHash } } } },
           select: { citaId: true },
         });
         if (abiertas.length === 1) {
@@ -229,7 +230,7 @@ export class WebhookService {
   private async aplicar(
     accion: 'si' | 'no' | 'baja',
     citaId: string,
-    telefonoHash: string,
+    telefonoHash: string[],
   ): Promise<ResultadoRespuesta> {
     if (accion === 'si') return this.respuestas.confirmar(citaId);
     if (accion === 'no') return this.respuestas.cancelar(citaId);

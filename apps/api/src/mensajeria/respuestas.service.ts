@@ -82,10 +82,15 @@ export class RespuestasService {
    * comparten ese teléfono (la baja es del número) y sus citas abiertas pasan a «Sin respuesta»
    * para que una funcionaria les llame.
    */
-  async registrarBaja(telefonoHash: string, origen = 'paciente_whatsapp'): Promise<number> {
+  async registrarBaja(
+    telefonoHash: string | string[],
+    origen = 'paciente_whatsapp',
+  ): Promise<number> {
     const ahora = this.reloj.ahora();
     const pacientes = await this.prisma.paciente.findMany({
-      where: { telefonoHash },
+      where: {
+        telefonoHash: Array.isArray(telefonoHash) ? { in: telefonoHash } : telefonoHash,
+      },
       select: { id: true, whatsappBaja: true },
     });
     if (pacientes.length === 0) return 0;

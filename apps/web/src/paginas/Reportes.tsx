@@ -1,3 +1,4 @@
+import { TablaScroll } from '../componentes/TablaScroll';
 import { Download } from 'lucide-react';
 import { useState } from 'react';
 import { ETIQUETA_ESTADO, type EstadoCita } from '@bh/shared';
@@ -194,12 +195,7 @@ export function Reportes() {
           {d.confirmaciones.porCentro.length === 0 ? (
             <p className="texto-secundario">No hay citas con fecha en este período.</p>
           ) : (
-            <div
-              className="tabla-scroll"
-              role="region"
-              tabIndex={0}
-              aria-label="Tabla con desplazamiento"
-            >
+            <TablaScroll etiqueta="Confirmaciones por centro">
               <table className="tabla">
                 <thead>
                   <tr>
@@ -235,7 +231,7 @@ export function Reportes() {
                   ))}
                 </tbody>
               </table>
-            </div>
+            </TablaScroll>
           )}
 
           <h2>Motivos de llamadas entrantes</h2>

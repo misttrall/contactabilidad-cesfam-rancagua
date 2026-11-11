@@ -77,7 +77,7 @@
 ## V13 API
 | Control | Estado | Evidencia |
 |---|---|---|
-| Límite de tasa | ✅ | `seguridad.test.ts`, prueba de ráfaga en `carga-envio.integracion.test.ts` |
+| Límite de tasa por usuario (y por IP solo contra inundación) | ✅ | `seguridad.test.ts` (dos usuarias con la misma IP no comparten cupo), ráfaga en `carga-envio.integracion.test.ts` |
 | CORS restringido a los orígenes de la web | ✅ | `WEB_ORIGINS` |
 | Webhook con firma HMAC (`X-Hub-Signature-256`) y comparación en tiempo constante | ✅ | `mensajeria.integracion.test.ts` |
 | Formato FHIR validado | ✅ | `_format` no soportado → 406 `OperationOutcome`; validador oficial en CI |

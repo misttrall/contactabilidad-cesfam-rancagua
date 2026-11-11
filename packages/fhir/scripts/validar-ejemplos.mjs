@@ -1,6 +1,6 @@
 // Validación estructural mínima de los ejemplos (S0).
-// En S6 se reemplaza/complementa por el HL7 FHIR Validator oficial contra CL Core y la guía MINSAL
-// (ver .github/workflows/ci.yml, job "fhir-validator", que hoy corre solo la validación estructural).
+// Complementa al HL7 FHIR Validator oficial que corre en CI (job fhir-validator, ver ig/versions.json)
+// Este script es la comprobación rápida local (sin Java).
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -14,7 +14,7 @@ for (const f of readdirSync(dir)) {
     console.error(`${f}: resourceType "${r.resourceType}" no coincide con el nombre del archivo`);
     errores++;
   }
-  if (!r.id) {
+  if (!r.id && !['Bundle', 'CapabilityStatement'].includes(r.resourceType)) {
     console.error(`${f}: falta id`);
     errores++;
   }

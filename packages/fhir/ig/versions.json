@@ -1,17 +1,23 @@
 {
-  "_nota": "Versiones de las guías de implementación chilenas que validamos en CI. Ambas están en evolución (ballot / build continuo): FIJAR aquí la versión exacta al iniciar S2 y revisar por hito. Ver ADR-001 §1.",
+  "_nota": "Versiones que valida CI (job fhir-validator). Las guías chilenas están en evolución (CI build / ballot): la validación contra ellas es informativa y NO bloquea el merge; la validación contra FHIR R4 base SÍ bloquea. Revisar y subir versión en cada hito.",
   "fhirVersion": "4.0.1",
+  "validador": {
+    "version": "6.5.0",
+    "url": "https://github.com/hapifhir/org.hl7.fhir.core/releases/download/6.5.0/validator_cli.jar"
+  },
   "guias": [
     {
       "id": "hl7.fhir.cl.clcore",
       "descripcion": "CL Core (HL7 Chile)",
-      "version": "POR_FIJAR",
+      "version": "1.9.2",
+      "bloqueante": false,
       "referencia": "https://build.fhir.org/ig/HL7Chile/clcore_ig/"
     },
     {
-      "id": "Minsal-CL/agenda",
+      "id": "Minsal-CL.agenda",
       "descripcion": "Gestión de citas médicas enfocada en APS (MINSAL)",
-      "version": "POR_FIJAR",
+      "version": "current",
+      "bloqueante": false,
       "referencia": "https://build.fhir.org/ig/Minsal-CL/agenda/"
     }
   ]

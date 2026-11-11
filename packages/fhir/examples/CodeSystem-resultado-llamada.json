@@ -1,0 +1,29 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "resultado-llamada",
+  "url": "https://businesshub.cl/fhir/CodeSystem/resultado-llamada",
+  "version": "0.2.0",
+  "name": "resultado_llamada",
+  "title": "Resultado de una llamada saliente",
+  "status": "draft",
+  "content": "complete",
+  "count": 4,
+  "concept": [
+    {
+      "code": "confirmado",
+      "display": "Confirmado (asistirá)"
+    },
+    {
+      "code": "recado",
+      "display": "Recado dejado"
+    },
+    {
+      "code": "no_ubicado",
+      "display": "No ubicado"
+    },
+    {
+      "code": "cancelado",
+      "display": "Cancelado por el paciente"
+    }
+  ]
+}

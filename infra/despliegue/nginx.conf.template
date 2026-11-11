@@ -1,0 +1,33 @@
+# Servidor de la web. La TLS la termina el balanceador / proxy inverso de la región (HSTS se envía
+# aquí igualmente: el navegador solo lo respeta sobre https).
+#
+# Variables (envsubst, ver seguridad.inc.template):
+#   CSP_API              origen de la API,                p. ej. https://api.qa.ejemplo.cl
+#   CSP_ID               origen de Keycloak,              p. ej. https://id.qa.ejemplo.cl
+#   CSP_FRAME_ANCESTORS  quién puede embeber la web:      'none' (por defecto) o 'self' https://avis.ejemplo.cl
+server {
+  listen 80;
+  server_name _;
+  root /usr/share/nginx/html;
+  index index.html;
+  server_tokens off;
+
+  # Los archivos con huella (hash) son inmutables; index.html nunca se cachea.
+  location /assets/ {
+    include /etc/nginx/conf.d/seguridad.inc;
+    add_header Cache-Control "public, max-age=31536000, immutable" always;
+    try_files $uri =404;
+  }
+
+  location / {
+    include /etc/nginx/conf.d/seguridad.inc;
+    add_header Cache-Control "no-store" always;
+    try_files $uri /index.html;   # SPA: las rutas de la app las resuelve el router
+  }
+
+  location = /healthz {
+    access_log off;
+    default_type text/plain;
+    return 200 "ok\n";
+  }
+}

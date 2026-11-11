@@ -11,6 +11,7 @@ coverage/
 .env
 .env.*
 !.env.example
+!.env.qa.example
 
 # datos de pacientes: NUNCA versionar planillas reales (RNF-12)
 *.xlsx
@@ -27,3 +28,13 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 docs/mvp/avis/
+
+# despliegue: secretos y realm generado (contiene el secreto del cliente admin)
+infra/despliegue/.env.qa
+infra/despliegue/realm-generado.json
+respaldos/
+*.dump.enc
+
+# Playwright
+apps/e2e/test-results/
+apps/e2e/playwright-report/

@@ -1,0 +1,16 @@
+{
+  "resourceType": "PractitionerRole",
+  "id": "00000000-0000-4000-8000-000000000002",
+  "active": true,
+  "practitioner": {
+    "reference": "Practitioner/00000000-0000-4000-8000-000000000002"
+  },
+  "organization": {
+    "reference": "Organization/00000000-0000-4000-8000-000000000001"
+  },
+  "specialty": [
+    {
+      "text": "Medicina general"
+    }
+  ]
+}

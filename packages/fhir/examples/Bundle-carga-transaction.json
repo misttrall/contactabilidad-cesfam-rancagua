@@ -1,0 +1,110 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:00000000-0000-4000-8000-000000000100",
+      "resource": {
+        "resourceType": "Patient",
+        "identifier": [
+          {
+            "system": "https://hl7chile.cl/fhir/sid/run",
+            "value": "1000001-7"
+          }
+        ],
+        "name": [
+          {
+            "use": "official",
+            "text": "Paciente Demo 001"
+          }
+        ],
+        "telecom": [
+          {
+            "system": "phone",
+            "value": "+56900000001",
+            "use": "mobile"
+          }
+        ]
+      },
+      "request": {
+        "method": "PUT",
+        "url": "Patient?identifier=https://hl7chile.cl/fhir/sid/run|1000001-7"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:00000000-0000-4000-8000-000000000101",
+      "resource": {
+        "resourceType": "Appointment",
+        "status": "booked",
+        "serviceType": [
+          {
+            "text": "Control de salud"
+          }
+        ],
+        "appointmentType": {
+          "coding": [
+            {
+              "system": "https://businesshub.cl/fhir/CodeSystem/tipo-cita",
+              "code": "cronico"
+            }
+          ]
+        },
+        "start": "2026-11-25T09:30:00-03:00",
+        "participant": [
+          {
+            "actor": {
+              "reference": "urn:uuid:00000000-0000-4000-8000-000000000100"
+            },
+            "status": "needs-action"
+          },
+          {
+            "actor": {
+              "reference": "Location/00000000-0000-4000-8000-000000000001"
+            },
+            "status": "accepted"
+          },
+          {
+            "actor": {
+              "display": "Dra. Demo Uno"
+            },
+            "status": "accepted"
+          }
+        ],
+        "identifier": [
+          {
+            "system": "https://businesshub.cl/fhir/sid/cita",
+            "value": "d637018fdb1ebc3c854daec80c87f9a4"
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Appointment",
+        "ifNoneExist": "identifier=https://businesshub.cl/fhir/sid/cita|d637018fdb1ebc3c854daec80c87f9a4"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:00000000-0000-4000-8000-000000000102",
+      "resource": {
+        "resourceType": "Task",
+        "status": "ready",
+        "intent": "order",
+        "businessStatus": {
+          "coding": [
+            {
+              "system": "https://businesshub.cl/fhir/CodeSystem/estado-contacto",
+              "code": "sin-enviar"
+            }
+          ]
+        },
+        "focus": {
+          "reference": "urn:uuid:00000000-0000-4000-8000-000000000101"
+        }
+      },
+      "request": {
+        "method": "POST",
+        "url": "Task"
+      }
+    }
+  ]
+}

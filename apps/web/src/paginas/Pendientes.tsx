@@ -254,7 +254,12 @@ export function Pendientes() {
           <p className="texto-secundario" aria-live="polite">
             {filas.length} {filas.length === 1 ? 'paciente pendiente' : 'pacientes pendientes'}
           </p>
-          <div className="tabla-scroll">
+          <div
+            className="tabla-scroll"
+            role="region"
+            tabIndex={0}
+            aria-label="Tabla con desplazamiento"
+          >
             <table className="tabla">
               <thead>
                 <tr>

@@ -1,0 +1,19 @@
+{
+  "resourceType": "Task",
+  "id": "00000000-0000-4000-8000-000000000006",
+  "status": "requested",
+  "intent": "order",
+  "code": {
+    "coding": [
+      {
+        "system": "https://businesshub.cl/fhir/CodeSystem/tarea",
+        "code": "liberar-hora-avis",
+        "display": "Liberar hora en AVIS"
+      }
+    ]
+  },
+  "focus": {
+    "reference": "Appointment/00000000-0000-4000-8000-000000000003"
+  },
+  "authoredOn": "2026-11-20T15:00:00.000Z"
+}

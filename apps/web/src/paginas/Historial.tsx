@@ -158,7 +158,12 @@ export function Historial() {
           <p className="texto-secundario" aria-live="polite">
             {h.total} {h.total === 1 ? 'llamada' : 'llamadas'} · página {h.pagina} de {h.paginas}
           </p>
-          <div className="tabla-scroll">
+          <div
+            className="tabla-scroll"
+            role="region"
+            tabIndex={0}
+            aria-label="Tabla con desplazamiento"
+          >
             <table className="tabla">
               <thead>
                 <tr>

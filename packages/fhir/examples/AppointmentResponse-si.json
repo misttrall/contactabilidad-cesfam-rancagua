@@ -1,0 +1,12 @@
+{
+  "resourceType": "AppointmentResponse",
+  "id": "00000000-0000-4000-8000-000000000008",
+  "appointment": {
+    "reference": "Appointment/00000000-0000-4000-8000-000000000003"
+  },
+  "actor": {
+    "reference": "Patient/00000000-0000-4000-8000-000000000004"
+  },
+  "participantStatus": "accepted",
+  "start": "2026-11-20T15:00:00.000Z"
+}

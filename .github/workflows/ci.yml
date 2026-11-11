@@ -44,7 +44,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - name: Migraciones de la base de pruebas
@@ -57,6 +57,73 @@ jobs:
       - run: pnpm turbo run typecheck test build
       - name: Ejemplos FHIR (estructura)
         run: pnpm --filter @bh/fhir validate
+      - name: Infraestructura (realm QA/PROD, CSP y nginx)
+        run: node --test infra/
+      - name: Sintaxis de los scripts de respaldo
+        run: for f in infra/respaldo/*.sh; do bash -n "$f"; done
+
+  # E2E (Playwright) de los flujos A y B y accesibilidad (axe, WCAG 2.2 AA) contra el sistema completo:
+  # API + web + Keycloak (realm de desarrollo) + Postgres + Redis. Solo datos ficticios del ambiente DEMO.
+  e2e:
+    name: E2E y accesibilidad
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: businesshub
+          POSTGRES_PASSWORD: businesshub
+          POSTGRES_DB: businesshub
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U businesshub"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      CI: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Keycloak (realm de desarrollo)
+        run: |
+          docker run -d --name keycloak -p 8081:8081             -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e KC_BOOTSTRAP_ADMIN_PASSWORD=admin             -e KC_HTTP_PORT=8081 -e KC_HEALTH_ENABLED=true             -v "$PWD/infra/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro"             -v "$PWD/infra/keycloak/theme:/opt/keycloak/themes:ro"             quay.io/keycloak/keycloak:26.0 start-dev --import-realm
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:8081/realms/businesshub >/dev/null && exit 0
+            sleep 3
+          done
+          docker logs keycloak | tail -50
+          exit 1
+      - name: Preparar API (migraciones y catálogos)
+        run: |
+          cp .env.example apps/api/.env
+          pnpm --filter @bh/api exec prisma migrate deploy
+          pnpm --filter @bh/api db:seed
+      - name: Navegador
+        run: pnpm --filter @bh/e2e exec playwright install --with-deps chromium
+      - name: Pruebas E2E
+        run: pnpm --filter @bh/e2e e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-informe
+          path: |
+            apps/e2e/playwright-report
+            apps/e2e/test-results
+          retention-days: 7
 
   sin-datos-reales:
     name: Sin planillas ni datos reales
@@ -71,5 +138,36 @@ jobs:
         run: |
           if git ls-files | grep -q '^node_modules/'; then echo "node_modules no debe versionarse"; exit 1; fi
 
-  # S6: reemplazar la validación estructural por el HL7 FHIR Validator oficial contra
-  # CL Core y la guía de Agenda APS MINSAL (versiones fijadas en packages/fhir/ig/versions.json).
+  # HL7 FHIR Validator oficial sobre los ejemplos (= salida real de los mapeadores, ver
+  # packages/fhir/src/ejemplos.test.ts). Contra FHIR R4 base: bloquea. Contra las guías chilenas
+  # (CL Core, Agenda APS MINSAL), que están en ballot/CI build: informativo (versiones en ig/versions.json).
+  fhir-validator:
+    name: HL7 FHIR Validator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: Leer versiones fijadas
+        id: v
+        run: |
+          echo "url=$(jq -r .validador.url packages/fhir/ig/versions.json)" >> "$GITHUB_OUTPUT"
+          echo "ver=$(jq -r .validador.version packages/fhir/ig/versions.json)" >> "$GITHUB_OUTPUT"
+          echo "clcore=$(jq -r '.guias[] | select(.id=="hl7.fhir.cl.clcore") | .version' packages/fhir/ig/versions.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: |
+            validator_cli.jar
+            ~/.fhir/packages
+          key: fhir-validator-${{ steps.v.outputs.ver }}-${{ steps.v.outputs.clcore }}
+      - name: Descargar validador
+        run: test -f validator_cli.jar || curl -fsSL -o validator_cli.jar "${{ steps.v.outputs.url }}"
+      - name: Validar contra FHIR R4 (bloqueante)
+        run: |
+          java -jar validator_cli.jar packages/fhir/examples/*.json             -version 4.0.1 -level errors -no-extensible-binding-warnings             -output-style compact
+      - name: Validar contra CL Core (informativo)
+        continue-on-error: true
+        run: |
+          java -jar validator_cli.jar packages/fhir/examples/*.json             -version 4.0.1 -ig hl7.fhir.cl.clcore#${{ steps.v.outputs.clcore }}             -output-style compact

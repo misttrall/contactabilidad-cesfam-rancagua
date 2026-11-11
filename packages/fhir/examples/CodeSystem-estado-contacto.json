@@ -1,0 +1,33 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "estado-contacto",
+  "url": "https://businesshub.cl/fhir/CodeSystem/estado-contacto",
+  "version": "0.2.0",
+  "name": "estado_contacto",
+  "title": "Estado de contactabilidad de la cita",
+  "status": "draft",
+  "content": "complete",
+  "count": 5,
+  "concept": [
+    {
+      "code": "sin-enviar",
+      "display": "Sin enviar"
+    },
+    {
+      "code": "enviado",
+      "display": "Enviado · esperando respuesta"
+    },
+    {
+      "code": "confirmado",
+      "display": "Confirmado"
+    },
+    {
+      "code": "sin-respuesta",
+      "display": "Sin respuesta · llamar"
+    },
+    {
+      "code": "cancelado",
+      "display": "Cancelado por paciente"
+    }
+  ]
+}

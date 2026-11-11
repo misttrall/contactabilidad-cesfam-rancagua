@@ -256,7 +256,12 @@ export function Cargas() {
           {resumen.vistaPrevia.length > 0 && (
             <>
               <h2>Vista previa</h2>
-              <div className="tabla-scroll">
+              <div
+                className="tabla-scroll"
+                role="region"
+                tabIndex={0}
+                aria-label="Tabla con desplazamiento"
+              >
                 <table className="tabla">
                   <thead>
                     <tr>
@@ -302,7 +307,12 @@ export function Cargas() {
                 Las filas con errores no se importan. Muestra {resumen.errores.length} de{' '}
                 {resumen.erroresTotal}.
               </p>
-              <div className="tabla-scroll">
+              <div
+                className="tabla-scroll"
+                role="region"
+                tabIndex={0}
+                aria-label="Tabla con desplazamiento"
+              >
                 <table className="tabla">
                   <thead>
                     <tr>
@@ -387,7 +397,12 @@ export function Cargas() {
         <p className="texto-secundario">Todavía no hay cargas.</p>
       )}
       {resumenCargas.data && resumenCargas.data.historial.length > 0 && (
-        <div className="tabla-scroll">
+        <div
+          className="tabla-scroll"
+          role="region"
+          tabIndex={0}
+          aria-label="Tabla con desplazamiento"
+        >
           <table className="tabla">
             <thead>
               <tr>

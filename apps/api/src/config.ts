@@ -10,6 +10,12 @@ export interface Config {
   origenesWeb: string[];
   /** Clave AES-256 (32 bytes) para cifrar datos de contacto en la BD. */
   claveDatos: Buffer;
+  /** Claves anteriores (solo para descifrar durante una rotación). */
+  clavesDatosAnteriores: Buffer[];
+  /** Límites de tasa de la API. Solo se pueden apagar fuera de PRODUCCION (pruebas de integración). */
+  limitesTasa: boolean;
+  /** Meses que se conservan los datos personales tras la última cita antes de anonimizarlos. */
+  retencionMeses: number;
   /** Redis para la cola de envíos. Sin él, la cola corre en memoria (solo desarrollo y pruebas). */
   redisUrl: string | undefined;
   /** Cada cuántos ms se revisan los vencimientos de respuesta; 0 lo desactiva. */
@@ -65,6 +71,9 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     ambiente,
     claveDatos,
+    clavesDatosAnteriores: leerClavesAnteriores(env),
+    retencionMeses: leerRetencion(env),
+    limitesTasa: leerLimitesTasa(env, ambiente),
     redisUrl: env.REDIS_URL || undefined,
     barridoMs,
     whatsapp,
@@ -100,6 +109,39 @@ function leerClaveDatos(env: NodeJS.ProcessEnv, ambiente: Ambiente): Buffer {
   const clave = Buffer.from(b64, 'base64');
   if (clave.length !== 32) throw new Error('DATA_ENCRYPTION_KEY debe ser de 32 bytes en base64');
   return clave;
+}
+
+function leerLimitesTasa(env: NodeJS.ProcessEnv, ambiente: Ambiente): boolean {
+  const apagado = env.LIMITE_TASA === 'off';
+  if (apagado && ambiente === 'PRODUCCION') {
+    throw new Error('LIMITE_TASA=off no está permitido en PRODUCCION');
+  }
+  return !apagado;
+}
+
+function leerRetencion(env: NodeJS.ProcessEnv): number {
+  const n = Number(env.RETENCION_MESES ?? 12);
+  if (!Number.isInteger(n) || n < 1 || n > 120) {
+    throw new Error(`RETENCION_MESES inválido: ${env.RETENCION_MESES} (entero de 1 a 120)`);
+  }
+  return n;
+}
+
+/** DATA_ENCRYPTION_KEY_ANTERIORES: claves viejas en base64 separadas por coma (rotación de claves). */
+function leerClavesAnteriores(env: NodeJS.ProcessEnv): Buffer[] {
+  return (env.DATA_ENCRYPTION_KEY_ANTERIORES ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((b64) => {
+      const k = Buffer.from(b64, 'base64');
+      if (k.length !== 32) {
+        throw new Error(
+          'DATA_ENCRYPTION_KEY_ANTERIORES: cada clave debe ser de 32 bytes en base64',
+        );
+      }
+      return k;
+    });
 }
 
 function leerWhatsapp(env: NodeJS.ProcessEnv, ambiente: Ambiente): Config['whatsapp'] {

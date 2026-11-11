@@ -1,0 +1,124 @@
+{
+  "resourceType": "CapabilityStatement",
+  "status": "draft",
+  "date": "2026-11-20T15:00:00.000Z",
+  "kind": "instance",
+  "software": {
+    "name": "BusinessHub Salud",
+    "version": "0.2.0"
+  },
+  "implementation": {
+    "description": "BusinessHub Salud - Contactabilidad CESFAM Rancagua",
+    "url": "https://demo.example/fhir/R4"
+  },
+  "fhirVersion": "4.0.1",
+  "format": ["json"],
+  "rest": [
+    {
+      "mode": "server",
+      "security": {
+        "description": "OAuth 2.0 / OpenID Connect (Keycloak). Bearer token obligatorio salvo /metadata."
+      },
+      "resource": [
+        {
+          "type": "Organization",
+          "interaction": [
+            {
+              "code": "read"
+            },
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "Location",
+          "interaction": [
+            {
+              "code": "read"
+            },
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "Practitioner",
+          "interaction": [
+            {
+              "code": "read"
+            },
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "PractitionerRole",
+          "interaction": [
+            {
+              "code": "read"
+            },
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "CodeSystem",
+          "interaction": [
+            {
+              "code": "read"
+            }
+          ]
+        },
+        {
+          "type": "Appointment",
+          "interaction": [
+            {
+              "code": "read"
+            },
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "Patient",
+          "interaction": [
+            {
+              "code": "read"
+            },
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "Task",
+          "interaction": [
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "Communication",
+          "interaction": [
+            {
+              "code": "search-type"
+            }
+          ]
+        },
+        {
+          "type": "AppointmentResponse",
+          "interaction": [
+            {
+              "code": "search-type"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

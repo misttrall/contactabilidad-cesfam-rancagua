@@ -1,0 +1,34 @@
+{
+  "resourceType": "Communication",
+  "id": "00000000-0000-4000-8000-000000000007",
+  "status": "completed",
+  "medium": [
+    {
+      "coding": [
+        {
+          "system": "https://businesshub.cl/fhir/CodeSystem/medio-contacto",
+          "code": "whatsapp",
+          "display": "WhatsApp"
+        }
+      ]
+    }
+  ],
+  "topic": {
+    "coding": [
+      {
+        "system": "https://businesshub.cl/fhir/CodeSystem/tipo-mensaje",
+        "code": "confirmacion"
+      }
+    ]
+  },
+  "subject": {
+    "reference": "Patient/00000000-0000-4000-8000-000000000004"
+  },
+  "about": [
+    {
+      "reference": "Appointment/00000000-0000-4000-8000-000000000003"
+    }
+  ],
+  "sent": "2026-11-20T15:00:00.000Z",
+  "received": "2026-11-20T15:00:00.000Z"
+}

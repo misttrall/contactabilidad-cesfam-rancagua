@@ -1,0 +1,17 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "motivo-llamada",
+  "url": "https://businesshub.cl/fhir/CodeSystem/motivo-llamada",
+  "version": "0.2.0",
+  "name": "motivo_llamada",
+  "title": "Motivos de llamada entrante",
+  "status": "draft",
+  "content": "complete",
+  "count": 1,
+  "concept": [
+    {
+      "code": "CONSULTA",
+      "display": "Consulta de horario"
+    }
+  ]
+}

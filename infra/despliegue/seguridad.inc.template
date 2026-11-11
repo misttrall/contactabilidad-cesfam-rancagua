@@ -1,0 +1,9 @@
+# Cabeceras de seguridad compartidas (se incluyen en cada location: nginx no hereda add_header
+# cuando un bloque define las suyas). style-src-attr permite los style="" de los gráficos (anchos de
+# barras); los <style> y hojas externas siguen limitadas a 'self', y los scripts son estrictos.
+add_header Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ${CSP_API} ${CSP_ID}; frame-src ${CSP_ID}; frame-ancestors ${CSP_FRAME_ANCESTORS}; base-uri 'none'; form-action 'self' ${CSP_ID}; object-src 'none'; upgrade-insecure-requests" always;
+add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header Referrer-Policy "no-referrer" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+add_header Cross-Origin-Opener-Policy "same-origin" always;

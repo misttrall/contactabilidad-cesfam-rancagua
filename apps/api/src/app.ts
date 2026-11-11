@@ -1,15 +1,16 @@
 import 'reflect-metadata';
 import type { INestApplication } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { cargarConfig } from './config';
+import { aplicarSeguridad } from './seguridad/seguridad';
 
 /** Configuración común (la usan main.ts y las pruebas e2e). */
 export function configurarApp(app: INestApplication): INestApplication {
-  const { origenesWeb } = cargarConfig();
-  // Cabeceras de seguridad (informe 13.2). CSP/HSTS finos se afinan en S6.
-  app.use(helmet());
+  const config = cargarConfig();
+  const { origenesWeb } = config;
+  // Cabeceras (CSP, HSTS, no-store), formato FHIR y límites de tasa (informe 13.2, S6).
+  aplicarSeguridad(app, config);
   app.enableCors({
     origin: origenesWeb,
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],

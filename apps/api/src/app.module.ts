@@ -37,6 +37,8 @@ import { WebhookService } from './mensajeria/webhook.service';
 import { PrismaService } from './prisma/prisma.service';
 import { ReportesController } from './reportes/reportes.controller';
 import { ReportesService } from './reportes/reportes.service';
+import { PrivacidadController } from './privacidad/privacidad.controller';
+import { PrivacidadService } from './privacidad/privacidad.service';
 import { CANAL, COLA_ENVIOS, CONFIG, RELOJ, VERIFICADOR_TOKEN } from './tokens';
 import { MeController } from './usuarios/me.controller';
 import { KeycloakAdminService } from './usuarios/keycloak-admin.service';
@@ -70,6 +72,7 @@ export class SaludController {
     LlamadasEntrantesController,
     ReportesController,
     AdministracionController,
+    PrivacidadController,
   ],
   providers: [
     { provide: CONFIG, useFactory: () => cargarConfig() },
@@ -92,6 +95,7 @@ export class SaludController {
           : new SimuladorWhatsApp(),
     },
     PrismaService,
+    PrivacidadService,
     AuditoriaService,
     UsuariosService,
     CifradoService,

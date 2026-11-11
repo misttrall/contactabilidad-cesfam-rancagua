@@ -246,7 +246,12 @@ export function ConfirmacionMasiva() {
               No hay citas {tipo !== 'todos' ? 'de ese tipo ' : ''}para esa fecha.
             </p>
           ) : (
-            <div className="tabla-scroll">
+            <div
+              className="tabla-scroll"
+              role="region"
+              tabIndex={0}
+              aria-label="Tabla con desplazamiento"
+            >
               <table className="tabla">
                 <thead>
                   <tr>
@@ -405,7 +410,12 @@ export function ConfirmacionMasiva() {
             Estos pacientes respondieron «No podré asistir». AVIS es el dueño de la agenda: libera
             la hora allí y márcala aquí.
           </p>
-          <div className="tabla-scroll">
+          <div
+            className="tabla-scroll"
+            role="region"
+            tabIndex={0}
+            aria-label="Tabla con desplazamiento"
+          >
             <table className="tabla">
               <thead>
                 <tr>
@@ -432,7 +442,7 @@ export function ConfirmacionMasiva() {
                         className="bh-boton bh-boton--secundario"
                         disabled={resolver.isPending}
                         onClick={() => resolver.mutate(l.id)}
-                        aria-label={`Ya liberé la hora de ${l.paciente}`}
+                        aria-label={`Ya la liberé: ${l.paciente}`}
                       >
                         Ya la liberé
                       </button>

@@ -1,0 +1,40 @@
+{
+  "resourceType": "Appointment",
+  "id": "00000000-0000-4000-8000-000000000003",
+  "status": "booked",
+  "serviceType": [
+    {
+      "text": "Control de salud"
+    }
+  ],
+  "appointmentType": {
+    "coding": [
+      {
+        "system": "https://businesshub.cl/fhir/CodeSystem/tipo-cita",
+        "code": "cronico"
+      }
+    ]
+  },
+  "start": "2026-11-25T09:30:00-03:00",
+  "participant": [
+    {
+      "actor": {
+        "reference": "Patient/00000000-0000-4000-8000-000000000004"
+      },
+      "status": "needs-action"
+    },
+    {
+      "actor": {
+        "reference": "Location/00000000-0000-4000-8000-000000000001"
+      },
+      "status": "accepted"
+    },
+    {
+      "actor": {
+        "reference": "Practitioner/00000000-0000-4000-8000-000000000002",
+        "display": "Dra. Demo Uno"
+      },
+      "status": "accepted"
+    }
+  ]
+}

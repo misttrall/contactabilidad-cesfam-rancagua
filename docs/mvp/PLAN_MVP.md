@@ -161,12 +161,26 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 
 **Pendiente a futuro de S5:** exportar el historial de llamadas a Excel (arrastrado de S4; llevaría datos personales, requiere definir qué columnas); crear usuarios desde la aplicación (hoy se crean en Keycloak); edición de plantillas cuando exista el flujo de aprobación en Meta; vistas materializadas si el volumen lo exige.
 
-### S6 — Endurecimiento, conformidad y piloto
-- [ ] Fachada FHIR completa: `GET/POST` según CapabilityStatement, búsquedas mínimas (`Patient?identifier=`, `Appointment?date=&location=`), `_format=json`; todo ejemplo y respuesta validados con el Validator en CI.
-- [ ] Seguridad: CSP, HSTS, X-Frame-Options/`frame-ancestors` (permitir solo origen AVIS si se embebe), rate limiting, cifrado en reposo (disco + columnas sensibles con pgcrypto), backups cifrados con prueba de restauración, rotación de secretos.
-- [ ] Privacidad (Ley 21.719): registro de actividades de tratamiento, política de retención (p. ej. citas/contactos 12 meses → anonimización), procedimiento ARCO+ (acceso, rectificación, supresión, oposición, portabilidad, bloqueo), plan de notificación de brechas.
-- [ ] Pruebas: E2E Playwright de flujos A y B, `@axe-core/playwright` sin errores, prueba de carga de envío masivo (1.000 citas), pentest básico OWASP ASVS nivel 2.
-- [ ] Despliegue en región Chile, ambientes DEMO y QA, manual de operación, guía de pruebas del cap. 12 actualizada.
+### S6 — Endurecimiento, conformidad y piloto ✅ (código y documentación; piloto real pendiente de decisiones del cliente)
+- [x] **Fachada FHIR:** `GET/search` según el CapabilityStatement (`Patient?identifier=`, `Appointment?date=&location=`, `Task`, `Communication`, `AppointmentResponse`, catálogos); `_format=json` aceptado y otros formatos → 406 `OperationOutcome`. Los **18 ejemplos** de `packages/fhir/examples/` son la salida real de los mapeadores (una prueba los regenera y compara) y CI los valida con el **HL7 FHIR Validator oficial**: contra FHIR R4 base (bloquea) y contra CL Core (informativo, guía en CI build). *Escritura (`POST`) no se implementa: la agenda es de AVIS (decisión del ADR).*
+- [x] **Seguridad HTTP:** CSP, HSTS (fuera de DEMO), `X-Frame-Options`/`frame-ancestors`, `no-referrer`, `Cache-Control: no-store` en `/api` y `/fhir`; límites de tasa por ruta (cargas, revelar, envíos, exportar, webhook, general) con `Retry-After`; nginx de la web con CSP estricta (scripts solo `self`) verificada en navegador real contra el stack local. Detalle: [SEGURIDAD_ASVS.md](SEGURIDAD_ASVS.md).
+- [x] **Cifrado y secretos:** teléfono AES-256-GCM con **claves versionadas** (`v2:<id>:…`) y rotación sin parada (`DATA_ENCRYPTION_KEY_ANTERIORES` + `pnpm --filter @bh/api rotar-claves`, idempotente); cifrado de disco/volúmenes por infraestructura; **respaldos cifrados** (AES-256, PBKDF2) con suma de verificación y **prueba de restauración** automatizada (probada: 203 filas en 16 tablas idénticas; clave errónea y archivo alterado rechazados). Decisión: RUT y nombre no se cifran por columna (el RUT es la clave de búsqueda única) → protegidos por cifrado de disco y control de acceso; **no se usa pgcrypto**.
+- [x] **Privacidad (Ley 21.719):** [registro de tratamiento](privacidad/REGISTRO_TRATAMIENTO.md), [política de retención](privacidad/POLITICA_RETENCION.md) (12 meses → anonimización, implementada y probada), [procedimiento ARCO+](privacidad/PROCEDIMIENTO_ARCO.md) (acceso/portabilidad, oposición y supresión por API, auditadas) y [plan de brechas](privacidad/PLAN_BRECHAS.md). *Borradores técnicos: requieren revisión jurídica y las decisiones del §7.*
+- [x] **Pruebas:** E2E Playwright de los flujos A y B (`apps/e2e`), `axe` WCAG 2.2 AA en **todas las pantallas a 1366 px y a 640 px** (lado a lado con AVIS) sin violaciones, prueba de carga de **1.000 envíos** (idempotencia, sin duplicados, límite de tasa), autoevaluación ASVS nivel 2. El E2E encontró y se corrigieron 3 defectos reales de accesibilidad: botón «Cerrar sesión» sin nombre accesible en pantallas angostas, `aria-label` que no contenía el texto visible, y tablas con desplazamiento inaccesibles por teclado.
+- [x] **Despliegue y operación:** Dockerfiles (API, web), `docker-compose.qa.yml`, plantilla de variables, **generador del realm QA/PROD** (sin usuarios ni cliente dev-cli, https obligatorio, MFA, política de contraseñas; con pruebas), [manual de operación](OPERACION.md), [guía de pruebas](GUIA_PRUEBAS.md).
+
+**Decisiones y hallazgos de S6**
+- CI y Docker pasan a **Node 22**: pnpm 11 exige Node ≥ 22.13 (con Node 20 el contenedor falla). `engines` sigue en `>=20.19`; conviene subirlo y añadir `.nvmrc` 22 cuando se decida.
+- Las pruebas de integración apagan los límites de tasa (`LIMITE_TASA=off`, prohibido en PRODUCCION); los archivos que prueban el límite lo encienden.
+- La ventana horaria de envío (09:00–18:00 Chile) hace que un E2E fuera de horario deje los mensajes programados: el E2E la abre y la restaura.
+- Límite de tasa en memoria: válido con una instancia; con varias, pasarlo a Redis.
+
+**Pendiente (no se puede cerrar desde el código)**
+- Prueba de **penetración externa** y modelo de amenazas formal (lo hecho es autoevaluación).
+- **No verificado aquí:** el job de CI del HL7 Validator y el job `e2e` (workflows escritos, pero no ejecutados en GitHub); el despliegue real en una región de Chile (proveedor aún no definido) y la verificación de disco cifrado.
+- Versión exacta de **CL Core** y **Agenda APS** (hoy `1.9.2` y `current`, en ballot/CI build).
+- Convenio de tratamiento, base legal, Meta/WhatsApp y DEIS (§7), y revisión jurídica de los documentos de privacidad.
+- Escaneo automático de dependencias (Dependabot/`pnpm audit`) y migrar el limitador a Redis antes de escalar.
 
 ## 4. Modelo de datos (resumen)
 

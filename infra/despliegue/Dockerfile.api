@@ -1,0 +1,21 @@
+# API BusinessHub Salud. Construir desde la RAÍZ del repositorio:
+#   docker build -f infra/despliegue/Dockerfile.api -t businesshub-api .
+FROM node:22-alpine AS construir
+RUN corepack enable
+WORKDIR /repo
+COPY . .
+RUN pnpm install --frozen-lockfile \
+ && pnpm --filter @bh/shared --filter @bh/fhir --filter @bh/api build
+
+FROM node:22-alpine
+ENV NODE_ENV=production
+# OpenSSL lo necesita el motor de Prisma en Alpine.
+RUN apk add --no-cache openssl
+WORKDIR /repo
+# node_modules de pnpm usa enlaces simbólicos relativos: se copia el árbol tal cual.
+COPY --from=construir /repo /repo
+USER node
+WORKDIR /repo/apps/api
+EXPOSE 3000
+# Las migraciones se aplican como paso de despliegue aparte (prisma migrate deploy), no al arrancar.
+CMD ["node", "dist/main.js"]

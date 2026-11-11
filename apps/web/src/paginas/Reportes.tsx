@@ -194,7 +194,12 @@ export function Reportes() {
           {d.confirmaciones.porCentro.length === 0 ? (
             <p className="texto-secundario">No hay citas con fecha en este período.</p>
           ) : (
-            <div className="tabla-scroll">
+            <div
+              className="tabla-scroll"
+              role="region"
+              tabIndex={0}
+              aria-label="Tabla con desplazamiento"
+            >
               <table className="tabla">
                 <thead>
                   <tr>

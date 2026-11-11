@@ -1,0 +1,21 @@
+{
+  "resourceType": "CodeSystem",
+  "id": "tipo-cita",
+  "url": "https://businesshub.cl/fhir/CodeSystem/tipo-cita",
+  "version": "0.2.0",
+  "name": "tipo_cita",
+  "title": "Tipo de cita",
+  "status": "draft",
+  "content": "complete",
+  "count": 2,
+  "concept": [
+    {
+      "code": "cronico",
+      "display": "Control crónico"
+    },
+    {
+      "code": "morbilidad",
+      "display": "Morbilidad"
+    }
+  ]
+}

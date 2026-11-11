@@ -64,7 +64,12 @@ export function Shell() {
           <span>{usuario.nombre}</span>
           <span className="shell__rol">{usuario.rolEtiqueta}</span>
         </span>
-        <button className="bh-boton bh-boton--secundario" onClick={cerrarSesion}>
+        <button
+          className="bh-boton bh-boton--secundario"
+          onClick={cerrarSesion}
+          aria-label="Cerrar sesión"
+          title="Cerrar sesión"
+        >
           <LogOut size={16} strokeWidth={1.75} aria-hidden="true" />
           <span className="shell__salir">Cerrar sesión</span>
         </button>

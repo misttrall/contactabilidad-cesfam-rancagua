@@ -353,7 +353,7 @@ describe('Confirmación masiva', () => {
     respuestas['POST /api/liberaciones/l1/resolver'] = { id: 'l1', resuelta: true };
     montar();
     expect(await screen.findByText(/Horas por liberar en AVIS \(1\)/)).toBeTruthy();
-    fireEvent.click(screen.getByRole('button', { name: 'Ya liberé la hora de Paciente x' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Ya la liberé: Paciente x' }));
     await waitFor(() =>
       expect(
         llamadas.some((l) => l.metodo === 'POST' && l.ruta === '/api/liberaciones/l1/resolver'),

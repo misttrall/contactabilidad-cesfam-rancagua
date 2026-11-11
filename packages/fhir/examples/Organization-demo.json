@@ -1,0 +1,12 @@
+{
+  "resourceType": "Organization",
+  "id": "00000000-0000-4000-8000-000000000001",
+  "active": true,
+  "identifier": [
+    {
+      "system": "https://businesshub.cl/fhir/CodeSystem/centro",
+      "value": "DEMO"
+    }
+  ],
+  "name": "Cesfam Demo Uno"
+}

@@ -67,46 +67,48 @@ function FilaCentro({ c }: { c: CentroAdmin }) {
       <td>
         <EstadoActivo activo={c.activo} />
       </td>
-      <td className="fila">
-        {editando ? (
-          <>
-            <button
-              className="bh-boton bh-boton--primario"
-              onClick={guardar}
-              disabled={editar.isPending}
-            >
-              Guardar
-            </button>
-            <button
-              className="bh-boton bh-boton--secundario"
-              onClick={() => {
-                setEditando(false);
-                setNombre(c.nombre);
-                editar.reset();
-              }}
-            >
-              Cancelar
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              className="bh-boton bh-boton--secundario"
-              onClick={() => setEditando(true)}
-              aria-label={`Editar el centro ${c.nombre}`}
-            >
-              Editar
-            </button>
-            <button
-              className="bh-boton bh-boton--secundario"
-              disabled={editar.isPending}
-              onClick={() => editar.mutate({ id: c.id, activo: !c.activo })}
-              aria-label={`${c.activo ? 'Desactivar' : 'Activar'} el centro ${c.nombre}`}
-            >
-              {c.activo ? 'Desactivar' : 'Activar'}
-            </button>
-          </>
-        )}
+      <td>
+        <div className="fila">
+          {editando ? (
+            <>
+              <button
+                className="bh-boton bh-boton--primario"
+                onClick={guardar}
+                disabled={editar.isPending}
+              >
+                Guardar
+              </button>
+              <button
+                className="bh-boton bh-boton--secundario"
+                onClick={() => {
+                  setEditando(false);
+                  setNombre(c.nombre);
+                  editar.reset();
+                }}
+              >
+                Cancelar
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="bh-boton bh-boton--secundario"
+                onClick={() => setEditando(true)}
+                aria-label={`Editar el centro ${c.nombre}`}
+              >
+                Editar
+              </button>
+              <button
+                className="bh-boton bh-boton--secundario"
+                disabled={editar.isPending}
+                onClick={() => editar.mutate({ id: c.id, activo: !c.activo })}
+                aria-label={`${c.activo ? 'Desactivar' : 'Activar'} el centro ${c.nombre}`}
+              >
+                {c.activo ? 'Desactivar' : 'Activar'}
+              </button>
+            </>
+          )}
+        </div>
       </td>
     </tr>
   );
@@ -243,31 +245,33 @@ function Motivos() {
                 <td>
                   <EstadoActivo activo={m.activo} />
                 </td>
-                <td className="fila">
-                  <button
-                    className="bh-icono-boton"
-                    disabled={i === 0 || mover.isPending}
-                    onClick={() => mover.mutate({ id: m.id, direccion: 'arriba' })}
-                    aria-label={`Subir el motivo ${m.descripcion}`}
-                  >
-                    <ArrowUp size={16} strokeWidth={1.75} aria-hidden="true" />
-                  </button>
-                  <button
-                    className="bh-icono-boton"
-                    disabled={i === n - 1 || mover.isPending}
-                    onClick={() => mover.mutate({ id: m.id, direccion: 'abajo' })}
-                    aria-label={`Bajar el motivo ${m.descripcion}`}
-                  >
-                    <ArrowDown size={16} strokeWidth={1.75} aria-hidden="true" />
-                  </button>
-                  <button
-                    className="bh-boton bh-boton--secundario"
-                    disabled={actualizar.isPending}
-                    onClick={() => actualizar.mutate({ id: m.id, activo: !m.activo })}
-                    aria-label={`${m.activo ? 'Desactivar' : 'Activar'} el motivo ${m.descripcion}`}
-                  >
-                    {m.activo ? 'Desactivar' : 'Activar'}
-                  </button>
+                <td>
+                  <div className="fila">
+                    <button
+                      className="bh-icono-boton"
+                      disabled={i === 0 || mover.isPending}
+                      onClick={() => mover.mutate({ id: m.id, direccion: 'arriba' })}
+                      aria-label={`Subir el motivo ${m.descripcion}`}
+                    >
+                      <ArrowUp size={16} strokeWidth={1.75} aria-hidden="true" />
+                    </button>
+                    <button
+                      className="bh-icono-boton"
+                      disabled={i === n - 1 || mover.isPending}
+                      onClick={() => mover.mutate({ id: m.id, direccion: 'abajo' })}
+                      aria-label={`Bajar el motivo ${m.descripcion}`}
+                    >
+                      <ArrowDown size={16} strokeWidth={1.75} aria-hidden="true" />
+                    </button>
+                    <button
+                      className="bh-boton bh-boton--secundario"
+                      disabled={actualizar.isPending}
+                      onClick={() => actualizar.mutate({ id: m.id, activo: !m.activo })}
+                      aria-label={`${m.activo ? 'Desactivar' : 'Activar'} el motivo ${m.descripcion}`}
+                    >
+                      {m.activo ? 'Desactivar' : 'Activar'}
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -404,26 +408,28 @@ function FilaUsuario({ u, centros }: { u: UsuarioAdmin; centros: CentroAdmin[] }
       <td>
         <EstadoActivo activo={u.activo} />
       </td>
-      <td className="fila">
-        <button
-          className="bh-boton bh-boton--primario"
-          disabled={
-            !cambioPendiente || editar.isPending || (rol === 'funcionaria' && centro === '')
-          }
-          onClick={guardar}
-          aria-label={`Guardar los cambios de ${u.nombre}`}
-        >
-          Guardar
-        </button>
-        <button
-          className="bh-boton bh-boton--secundario"
-          disabled={u.esYo || editar.isPending}
-          onClick={() => editar.mutate({ id: u.id, activo: !u.activo })}
-          aria-label={`${u.activo ? 'Desactivar' : 'Activar'} a ${u.nombre}`}
-        >
-          {u.activo ? 'Desactivar' : 'Activar'}
-        </button>
-        <Mensaje e={editar.error} />
+      <td>
+        <div className="fila">
+          <button
+            className="bh-boton bh-boton--primario"
+            disabled={
+              !cambioPendiente || editar.isPending || (rol === 'funcionaria' && centro === '')
+            }
+            onClick={guardar}
+            aria-label={`Guardar los cambios de ${u.nombre}`}
+          >
+            Guardar
+          </button>
+          <button
+            className="bh-boton bh-boton--secundario"
+            disabled={u.esYo || editar.isPending}
+            onClick={() => editar.mutate({ id: u.id, activo: !u.activo })}
+            aria-label={`${u.activo ? 'Desactivar' : 'Activar'} a ${u.nombre}`}
+          >
+            {u.activo ? 'Desactivar' : 'Activar'}
+          </button>
+          <Mensaje e={editar.error} />
+        </div>
       </td>
     </tr>
   );
@@ -449,7 +455,12 @@ function Usuarios() {
             Contraseñas y acceso se administran en Keycloak; aquí se asigna el rol y el centro. Al
             guardar, se cierra la sesión del usuario para que el cambio rija de inmediato.
           </p>
-          <div className="tabla-scroll">
+          <div
+            className="tabla-scroll"
+            role="region"
+            tabIndex={0}
+            aria-label="Tabla con desplazamiento"
+          >
             <table className="tabla">
               <thead>
                 <tr>

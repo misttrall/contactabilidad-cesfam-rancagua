@@ -1,0 +1,26 @@
+# Web BusinessHub Salud (estática, servida por nginx con CSP y HSTS). Desde la RAÍZ del repositorio:
+#   docker build -f infra/despliegue/Dockerfile.web \
+#     --build-arg VITE_AMBIENTE=QA --build-arg VITE_API_URL=https://api.qa.ejemplo.cl \
+#     --build-arg VITE_KEYCLOAK_ISSUER=https://id.qa.ejemplo.cl/realms/businesshub \
+#     -t businesshub-web .
+FROM node:22-alpine AS construir
+RUN corepack enable
+WORKDIR /repo
+COPY . .
+ARG VITE_AMBIENTE=QA
+ARG VITE_API_URL
+ARG VITE_KEYCLOAK_ISSUER
+ARG VITE_KEYCLOAK_CLIENT_ID=businesshub-web
+ENV VITE_AMBIENTE=$VITE_AMBIENTE VITE_API_URL=$VITE_API_URL \
+    VITE_KEYCLOAK_ISSUER=$VITE_KEYCLOAK_ISSUER VITE_KEYCLOAK_CLIENT_ID=$VITE_KEYCLOAK_CLIENT_ID
+RUN pnpm install --frozen-lockfile \
+ && pnpm --filter @bh/shared --filter @bh/ui build \
+ && pnpm --filter @bh/web build
+
+FROM nginx:1.27-alpine
+# La plantilla se procesa con envsubst al arrancar (solo las variables listadas en NGINX_ENVSUBST_FILTER).
+COPY infra/despliegue/nginx.conf.template /etc/nginx/templates/default.conf.template
+COPY infra/despliegue/seguridad.inc.template /etc/nginx/templates/seguridad.inc.template
+COPY --from=construir /repo/apps/web/dist /usr/share/nginx/html
+ENV NGINX_ENVSUBST_FILTER="^(CSP_API|CSP_ID|CSP_FRAME_ANCESTORS)$"
+EXPOSE 80

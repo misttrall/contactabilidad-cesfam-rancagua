@@ -126,7 +126,12 @@ export function Parametros() {
         </p>
       )}
       {parametros.data && (
-        <div className="tabla-scroll">
+        <div
+          className="tabla-scroll"
+          role="region"
+          tabIndex={0}
+          aria-label="Tabla con desplazamiento"
+        >
           <table className="tabla">
             <thead>
               <tr>

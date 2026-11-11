@@ -1,0 +1,17 @@
+{
+  "resourceType": "Task",
+  "id": "00000000-0000-4000-8000-000000000005",
+  "status": "in-progress",
+  "intent": "order",
+  "businessStatus": {
+    "coding": [
+      {
+        "system": "https://businesshub.cl/fhir/CodeSystem/estado-contacto",
+        "code": "enviado"
+      }
+    ]
+  },
+  "focus": {
+    "reference": "Appointment/00000000-0000-4000-8000-000000000003"
+  }
+}

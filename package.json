@@ -16,6 +16,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,css,yml}\" --ignore-path .prettierignore",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
+    "test:infra": "node --test infra/",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,css,yml}\" --ignore-path .prettierignore"
   },
   "devDependencies": {

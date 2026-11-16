@@ -20,7 +20,7 @@ test('mismas cabeceras que nginx: HSTS, nosniff, no-referrer, y caché correcta 
   assert.match(h, /X-Content-Type-Options: nosniff/);
   assert.match(h, /Referrer-Policy: no-referrer/);
   assert.match(h, /^\/\*\n[\s\S]*Cache-Control: no-store/m);
-  assert.match(h, /\/assets\/\*\n  Cache-Control: public, max-age=31536000, immutable/);
+  assert.match(h, /\/assets\/\*\n {2}Cache-Control: public, max-age=31536000, immutable/);
 });
 
 test('permite embeber solo donde se indique (AVIS)', () => {

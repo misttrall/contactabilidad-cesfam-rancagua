@@ -126,6 +126,18 @@ services:
       CSP_FRAME_ANCESTORS: ${CSP_FRAME_ANCESTORS:-'none'}
     ports: ['127.0.0.1:8080:80']
 
+  # Cloudflare Tunnel (perfil `tunel`): publica api y keycloak sin abrir puertos de la máquina.
+  # Los hostnames públicos se configuran en Cloudflare Zero Trust → Tunnels → Public hostnames:
+  #   api.<dominio>  → http://api:3000        id.<dominio> → http://keycloak:8080
+  cloudflared:
+    image: cloudflare/cloudflared:latest # fijar una versión al desplegar (Dependabot la actualiza)
+    profiles: ['tunel']
+    restart: unless-stopped
+    command: ['tunnel', '--no-autoupdate', 'run']
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?}
+    depends_on: [api, keycloak]
+
 volumes:
   pgdata:
   redisdata:

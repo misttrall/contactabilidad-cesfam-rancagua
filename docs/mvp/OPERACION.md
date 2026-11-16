@@ -24,11 +24,31 @@ Decisión del cliente (2026-11-16): el piloto va en **Cloudflare** por costo (gr
 | Piloto DEMO/QA | Cloudflare (+ una máquina Linux para el backend, ver abajo) | **solo ficticios** | simulador |
 | Piloto real (si prospera) | Google Cloud `southamerica-west1` (Santiago) | reales, con convenio y base legal | `cloud` (un solo número para todos los Cesfam) |
 
-**Restricción de arquitectura (importante):** el MVP no es solo una web. Necesita un servicio Node (NestJS), PostgreSQL, Redis y Keycloak, y eso **no corre en Cloudflare Pages ni en Workers tal como está** (hasta donde sé; confirmar los límites vigentes del plan gratuito). Una forma realista y gratuita de montar el piloto:
+**Arquitectura elegida: web en Cloudflare Pages + backend en una máquina (VM) con túnel.**
+El MVP no es solo una web: necesita un servicio Node (NestJS), PostgreSQL, Redis y Keycloak, y eso no corre en Pages ni en Workers tal como está (hasta donde sé; confirmar los límites vigentes del plan gratuito). Por eso:
 
-1. **Web estática** en *Cloudflare Pages* (`pnpm --filter @bh/web build`, directorio `apps/web/dist`, con las variables `VITE_*`). Las cabeceras (CSP, HSTS…) se definen en un archivo `_headers`: ver `infra/despliegue/cloudflare-pages/_headers.example`; en Pages no se usa el nginx del repositorio.
-2. **API + PostgreSQL + Redis + Keycloak** con el `docker-compose.qa.yml` en **una máquina Linux** (un servidor del municipio o una VM), expuesta a internet con **Cloudflare Tunnel** (sin abrir puertos). El tráfico pasa por Cloudflare: con datos ficticios no importa; **con datos reales no se usa esta ruta** (el tráfico y el cacheo quedarían fuera de Chile).
-3. Los respaldos y las demás medidas de este manual aplican igual.
+```
+Navegador ──► Cloudflare Pages (web estática, app.<dominio>)
+    │
+    └──────► Cloudflare Tunnel ─► VM Linux con Docker Compose
+                                   ├─ api (NestJS)        ← api.<dominio>
+                                   ├─ keycloak            ← id.<dominio>
+                                   └─ postgres + redis    (solo red interna)
+```
+
+**Paso a paso (piloto DEMO, datos ficticios):**
+
+1. **Máquina:** una VM o servidor Linux con Docker y Docker Compose (servidor del municipio o una VM barata; ≥ 2 vCPU y 4 GB). Sin puertos abiertos a internet.
+2. **Dominio y túnel:** en Cloudflare (Zero Trust → Tunnels) crear un túnel y copiar su token a `TUNNEL_TOKEN`. Hostnames públicos: `api.<dominio>` → `http://api:3000` e `id.<dominio>` → `http://keycloak:8080`.
+3. **Realm de Keycloak** apuntando a la URL de Pages: `node infra/keycloak/generar-realm.mjs --web https://app.<dominio> --ambiente QA > infra/despliegue/realm-generado.json` (con `KC_ADMIN_SECRET` en el entorno).
+4. **Backend:** completar `.env.qa` (`AMBIENTE=DEMO`, `PUBLIC_API_URL=https://api.<dominio>`, `WEB_ORIGIN=https://app.<dominio>`, `KEYCLOAK_ISSUER=https://id.<dominio>/realms/businesshub`, `KEYCLOAK_ORIGEN=https://id.<dominio>`, `KC_HOSTNAME=id.<dominio>`, `WHATSAPP_MODO=simulador`) y levantar con el perfil del túnel:
+   `docker compose --env-file .env.qa -f docker-compose.qa.yml --profile tunel up -d --build` y luego `… run --rm migrar` y `… exec api node_modules/.bin/tsx prisma/seed.ts` (o la semilla desde la web con «Restablecer datos demo»).
+5. **Web en Pages:** conectar el repositorio (o subir `dist`) con el comando `pnpm install --frozen-lockfile && pnpm --filter @bh/shared --filter @bh/ui build && pnpm --filter @bh/web build`, directorio de salida `apps/web/dist` y variables `VITE_AMBIENTE=DEMO`, `VITE_API_URL=https://api.<dominio>`, `VITE_KEYCLOAK_ISSUER=https://id.<dominio>/realms/businesshub`, **Node 22** (`NODE_VERSION=22`). Después del build, generar las cabeceras:
+   `node infra/despliegue/cloudflare-pages/generar-headers.mjs --api https://api.<dominio> --id https://id.<dominio> > apps/web/dist/_headers` (añadirlo al comando de build). Es la misma CSP que usa nginx, con prueba automática.
+6. **Verificar:** `https://api.<dominio>/health`, ingreso desde `https://app.<dominio>` y la [guía de pruebas](GUIA_PRUEBAS.md).
+7. **Respaldos:** `infra/respaldo/respaldar.sh` en la VM (cron diario) y copia fuera de la máquina.
+
+**Límites a recordar:** (a) el tráfico pasa por Cloudflare (fuera de Chile) y la VM puede estar donde sea: **por eso solo datos ficticios**; (b) un único punto de falla (una máquina) y sin alta disponibilidad: aceptable para un piloto; (c) el túnel reemplaza al balanceador, y `TRUST_PROXY=1` ya está en el compose.
 
 **Regla:** nada con datos reales de pacientes hasta estar en Google Cloud Santiago con convenio firmado y la base legal resuelta. Al migrar: crear el proyecto GCP en `southamerica-west1`, Cloud SQL (PostgreSQL 16) y Memorystore (Redis) o contenedores, Cloud Run/GCE para la API, Keycloak en Cloud Run/GCE con su base; Google Cloud cifra en reposo por defecto (AES-256) los discos y Cloud SQL, y en tránsito; opcionalmente con claves propias (CMEK). Guardar la evidencia (captura de la configuración) en la carpeta de privacidad.
 

@@ -52,6 +52,12 @@ jobs:
         env:
           DATABASE_URL: ${{ env.TEST_DATABASE_URL }}
       # Este gate bloquea el merge: evita repetir el defecto D-01 (build roto) del prototipo.
+      # Auditoría de dependencias: solo bloquea lo CRÍTICO en producción; el resto se informa (Dependabot).
+      - name: Auditoría de dependencias de producción (bloquea críticas)
+        run: pnpm audit --prod --audit-level critical
+      - name: Auditoría completa (informativa)
+        continue-on-error: true
+        run: pnpm audit --audit-level high
       - run: pnpm lint
       - run: pnpm format:check
       - run: pnpm turbo run typecheck test build

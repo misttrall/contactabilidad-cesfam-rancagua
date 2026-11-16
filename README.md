@@ -22,7 +22,7 @@ packages/ui      Design system clínico (tokens + componentes)
 
 ## Requisitos
 
-Node 20.19+ (ver `.nvmrc`), pnpm 11, Docker (para Postgres/Redis/Keycloak).
+Node 22.13+ (ver `.nvmrc`; pnpm 11 lo exige), pnpm 11, Docker (para Postgres/Redis/Keycloak).
 
 ## Comandos
 

@@ -1,6 +1,6 @@
 # Registro de actividades de tratamiento (Ley 21.719)
 
-> **Estado: borrador técnico para revisión jurídica.** Describe lo que el software hace hoy. Los campos marcados **(DECIDIR)** dependen del cliente (Dirección de Salud / Cesfam) y de asesoría legal. La Ley 21.719 entra en vigencia el **1 de diciembre de 2026**; conviene confirmar la fecha y el reglamento con el equipo jurídico.
+> **Estado: borrador técnico para revisión jurídica.** Describe lo que el software hace hoy. Los campos marcados **(DECIDIR)** dependen del cliente (Dirección de Salud / Cesfam) y de asesoría legal. La Ley 21.719 entra en vigencia el **1 de diciembre de 2026** según su artículo primero transitorio. Hay un proyecto que la posterga (Boletín N.º 18.623-07): el Senado lo aprobó el 28-10-2026 con el 15-10-2027 como nueva fecha y seguía en segundo trámite en la Cámara al 10-11-2026 (fuente: Informe técnico v4, §13.1). Mientras no se publique, rige el 1-12-2026; confirmar su estado antes del piloto con datos reales. Se diseña ya con sus exigencias en cualquier caso.
 
 ## 1. Responsables
 
@@ -9,7 +9,7 @@
 | Responsable del tratamiento | **(DECIDIR)** Dirección de Salud municipal / Cesfam |
 | Encargado del tratamiento | **(DECIDIR)** proveedor de BusinessHub Salud (convenio de tratamiento de datos pendiente: PLAN_MVP §7.4) |
 | Subencargados | Proveedor de nube (región Chile); Meta Platforms (WhatsApp Business Platform) |
-| Contacto de privacidad / delegado | **(DECIDIR)** |
+| Contacto de privacidad / delegado | César, encargado del call center de los Cesfam de Rancagua (definido por el cliente el 2026-11-16) |
 
 AVIS sigue siendo el sistema de la agenda y de la ficha: **este sistema no escribe en AVIS** y solo recibe la exportación de agenda que carga una funcionaria.
 
@@ -46,8 +46,8 @@ Los datos **no** se usan para otros fines (no hay marketing, perfilamiento ni de
 
 | Destinatario | Qué recibe | Observaciones |
 |---|---|---|
-| Meta (WhatsApp Business Platform) | teléfono y variables de la plantilla (fecha, hora, nombre del Cesfam). **Sin** nombre del paciente, profesional ni prestación (RN de diseño) | **transferencia internacional** (Meta procesa fuera de Chile): requiere cláusulas/acuerdo y mención en el aviso de privacidad **(DECIDIR)** |
-| Proveedor de nube | todo el contenido cifrado en reposo (disco) | región de Chile; convenio de encargo |
+| Meta (WhatsApp Business Platform), **un único número para todos los Cesfam de Rancagua** | teléfono y variables de la plantilla (fecha, hora, nombre del Cesfam). **Sin** nombre del paciente, profesional ni prestación (RN de diseño) | **transferencia internacional** (Meta procesa fuera de Chile): requiere cláusulas/acuerdo y mención en el aviso de privacidad **(DECIDIR)** |
+| Proveedor de nube | todo el contenido cifrado en reposo (disco) | **Piloto con datos ficticios: Cloudflare** (sin datos reales). **Si hay piloto real: Google Cloud, región de Santiago (`southamerica-west1`)**, para mantener los datos en Chile; convenio de encargo con el proveedor |
 | Otros | ninguno | no hay venta ni cesión a terceros |
 
 ## 5. Plazos de conservación
@@ -64,4 +64,4 @@ Procedimiento en [PROCEDIMIENTO_ARCO.md](PROCEDIMIENTO_ARCO.md).
 
 ## 8. Evaluación de impacto
 
-Por tratarse de datos de salud a escala (≈150 contactos diarios por funcionaria), se recomienda una **evaluación de impacto en protección de datos** antes del piloto real **(DECIDIR)**. Este documento y el [plan de brechas](PLAN_BRECHAS.md) sirven de insumo.
+La «evaluación de impacto» es la **evaluación de impacto en protección de datos** (un análisis de riesgos del tratamiento para los titulares), no de usabilidad. Por tratarse de datos de salud a escala (≈150 contactos diarios por funcionaria), se recomienda una **evaluación de impacto en protección de datos** antes del piloto real **(DECIDIR)**. Este documento y el [plan de brechas](PLAN_BRECHAS.md) sirven de insumo.

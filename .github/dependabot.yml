@@ -1,0 +1,18 @@
+# Actualizaciones automáticas de dependencias (un PR por grupo, semanal).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday, time: '07:00', timezone: America/Santiago }
+    open-pull-requests-limit: 5
+    groups:
+      desarrollo:
+        dependency-type: development
+      produccion:
+        dependency-type: production
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly, day: monday, time: '07:00', timezone: America/Santiago }
+  - package-ecosystem: docker
+    directory: /infra/despliegue
+    schedule: { interval: weekly, day: monday, time: '07:00', timezone: America/Santiago }

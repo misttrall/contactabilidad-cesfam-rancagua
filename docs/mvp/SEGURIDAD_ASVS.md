@@ -71,7 +71,7 @@
 ## V10 Código malicioso y V12 Archivos
 | Control | Estado | Evidencia |
 |---|---|---|
-| Dependencias | 🟡 | `pnpm-lock` congelado en CI; falta escaneo automático de CVE (Dependabot / `pnpm audit` en CI) |
+| Dependencias | 🟡 | `pnpm-lock` congelado en CI; **Dependabot** semanal y `pnpm audit` en CI (bloquea críticas en producción; el resto informa). Al 2026-11-16 quedan 2 avisos *high* en producción: `zod` 3.x (consumo de memoria con colecciones enormes: mitigado por el límite de 100 kB del cuerpo de Express; la corrección exige migrar a zod 4) y `deepmerge-ts` dentro del CLI de Prisma (solo en migraciones). Resto: herramientas de desarrollo (vitest, eslint, esbuild). |
 | Archivos subidos no se ejecutan ni se almacenan | ✅ | solo memoria |
 
 ## V13 API
@@ -91,7 +91,7 @@
 
 ## Riesgos conocidos y aceptados para el piloto
 1. **Límite de tasa en memoria**: válido con una instancia; con más hay que pasarlo a Redis.
-2. **Sin escaneo automático de dependencias** en CI todavía.
+2. **Dependencias:** quedan 2 avisos *high* en producción (ver V10) hasta migrar a zod 4 y actualizar Prisma.
 3. **Sin antivirus** para planillas (se procesan en memoria y no se guardan).
-4. **Sin pentest externo** ni modelo de amenazas formal.
+4. **Sin pentest independiente** ni modelo de amenazas formal. No conozco una norma que obligue a que sea externo, pero un tercero da más garantías ante la Dirección de Salud: ver la decisión en el plan §7.
 5. Las **guías CL Core / Agenda APS** están en evolución; su validación en CI es informativa.

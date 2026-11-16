@@ -219,6 +219,20 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 10. **Texto de reagendamiento:** ¿qué canales debe mencionar el mensaje cuando el paciente responde «No» (p. ej. Hora Fácil, Mi CHC, teléfono del Cesfam)? Hoy es un texto genérico editable en Configuración.
 11. **Base legal para escribir por WhatsApp** (Ley 21.719): consentimiento previo del paciente o interés legítimo en salud; definir con la Dirección de Salud antes de usar datos reales.
 
+### Respuestas del cliente (2026-11-16)
+
+| N.º | Decisión |
+|---|---|
+| 6 | **Un único número de WhatsApp para todos los Cesfam de Rancagua.** El nombre del Cesfam va como variable del mensaje (no se necesita un número por centro). Titular de Meta Business y trámite de verificación: pendiente. |
+| 9 | **DEIS: pendiente para la implementación** (hoy código local). |
+| 1–3, 8 | **Formato AVIS, edad/sexo, RUT con otro formato e integración para liberar horas: pendientes del Cesfam** (no hay acceso a AVIS); se ajustan en la implementación. |
+| 13 | **Contacto de privacidad: César, encargado del call center de los Cesfam de Rancagua.** Plazos propuestos aceptados (retención 12 meses, bitácora 24 meses, RPO 24 h / RTO 4 h, respaldos 30 días + 12 mensuales) salvo objeción. **Hosting:** piloto en Cloudflare con datos ficticios; si prospera, Google Cloud región Santiago (ver OPERACION.md). |
+| 14 | Documentos de privacidad aceptados como borrador de trabajo; la revisión jurídica sigue pendiente. |
+| 19 | Versiones de CL Core (`1.9.2`) y Agenda APS (`current`) fijadas; se revisan por hito. |
+| 21, 22 | Hecho: Node 22 (`.nvmrc`, `engines`), Dependabot y auditoría en CI. |
+| 23 | Limitador de tasa en Redis: **para después** (al usar más de una instancia). |
+| 18 | El push y el PR se harán **al terminar todo el piloto**; hasta entonces los jobs de CI en GitHub no se han ejecutado. |
+
 ## 8. Próximo paso inmediato
 
 Aprobar ADR-001 y comenzar S0 en `feat/mvp` (scaffolding del monorepo y CI).

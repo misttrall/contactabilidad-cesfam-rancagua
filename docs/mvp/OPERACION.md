@@ -13,7 +13,24 @@ Para quien despliega y mantiene el sistema. Complementa [PLAN_MVP.md](PLAN_MVP.m
 
 Reglas que el software hace cumplir (no dependen de que alguien las recuerde): en PRODUCCION `KEYCLOAK_ISSUER` debe ser `https`, `WHATSAPP_MODO=cloud`, y `DATA_ENCRYPTION_KEY` y `REDIS_URL` son obligatorias; «Restablecer datos demo» responde 403 fuera de DEMO.
 
-Todo se aloja en una **región de Chile** del proveedor (residencia de datos), en una red privada: Postgres y Redis **no** exponen puertos hacia afuera.
+**Hosting del piloto (decisión del cliente, 2026-11-16):** el piloto se publica en **Cloudflare** (gratuito) **solo con datos ficticios**; si resulta bien, se despliega en **Google Cloud, región de Santiago**, que es donde pueden vivir datos reales. Ver las restricciones de Cloudflare en el [plan de despliegue](#hosting-del-piloto). Todo se aloja en una **región de Chile** (con datos reales) del proveedor (residencia de datos), en una red privada: Postgres y Redis **no** exponen puertos hacia afuera.
+
+## Hosting del piloto
+
+Decisión del cliente (2026-11-16): el piloto va en **Cloudflare** por costo (gratuito) y, si funciona, pasa a **Google Cloud (región de Santiago)**.
+
+| Etapa | Dónde | Datos | WhatsApp |
+|---|---|---|---|
+| Piloto DEMO/QA | Cloudflare (+ una máquina Linux para el backend, ver abajo) | **solo ficticios** | simulador |
+| Piloto real (si prospera) | Google Cloud `southamerica-west1` (Santiago) | reales, con convenio y base legal | `cloud` (un solo número para todos los Cesfam) |
+
+**Restricción de arquitectura (importante):** el MVP no es solo una web. Necesita un servicio Node (NestJS), PostgreSQL, Redis y Keycloak, y eso **no corre en Cloudflare Pages ni en Workers tal como está** (hasta donde sé; confirmar los límites vigentes del plan gratuito). Una forma realista y gratuita de montar el piloto:
+
+1. **Web estática** en *Cloudflare Pages* (`pnpm --filter @bh/web build`, directorio `apps/web/dist`, con las variables `VITE_*`). Las cabeceras (CSP, HSTS…) se definen en un archivo `_headers`: ver `infra/despliegue/cloudflare-pages/_headers.example`; en Pages no se usa el nginx del repositorio.
+2. **API + PostgreSQL + Redis + Keycloak** con el `docker-compose.qa.yml` en **una máquina Linux** (un servidor del municipio o una VM), expuesta a internet con **Cloudflare Tunnel** (sin abrir puertos). El tráfico pasa por Cloudflare: con datos ficticios no importa; **con datos reales no se usa esta ruta** (el tráfico y el cacheo quedarían fuera de Chile).
+3. Los respaldos y las demás medidas de este manual aplican igual.
+
+**Regla:** nada con datos reales de pacientes hasta estar en Google Cloud Santiago con convenio firmado y la base legal resuelta. Al migrar: crear el proyecto GCP en `southamerica-west1`, Cloud SQL (PostgreSQL 16) y Memorystore (Redis) o contenedores, Cloud Run/GCE para la API, Keycloak en Cloud Run/GCE con su base; Google Cloud cifra en reposo por defecto (AES-256) los discos y Cloud SQL, y en tránsito; opcionalmente con claves propias (CMEK). Guardar la evidencia (captura de la configuración) en la carpeta de privacidad.
 
 ## 2. Despliegue
 

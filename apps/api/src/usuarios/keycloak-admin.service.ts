@@ -46,9 +46,14 @@ export class KeycloakAdminService {
     return this.config.keycloak.admin !== undefined;
   }
 
+  /** Con qué dirección se llega a Keycloak desde la API (en Docker difiere del emisor público). */
+  private get emisorInterno() {
+    return this.config.keycloak.internalIssuer ?? this.config.keycloak.issuer;
+  }
+
   private get base() {
     // http://kc/realms/x  ->  http://kc/admin/realms/x
-    return this.config.keycloak.issuer.replace('/realms/', '/admin/realms/');
+    return this.emisorInterno.replace('/realms/', '/admin/realms/');
   }
 
   private async obtenerToken(): Promise<string> {
@@ -59,7 +64,7 @@ export class KeycloakAdminService {
       );
     }
     if (this.token && this.token.expira > Date.now() + 30_000) return this.token.valor;
-    const res = await this.llamar(`${this.config.keycloak.issuer}/protocol/openid-connect/token`, {
+    const res = await this.llamar(`${this.emisorInterno}/protocol/openid-connect/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({

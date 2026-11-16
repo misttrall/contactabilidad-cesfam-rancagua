@@ -16,6 +16,10 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,json,css,yml}\" --ignore-path .prettierignore",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
+    "demo:up": "docker compose -f docker-compose.demo.yml up -d --build",
+    "demo:down": "docker compose -f docker-compose.demo.yml down",
+    "demo:reset": "docker compose -f docker-compose.demo.yml down -v",
+    "demo:logs": "docker compose -f docker-compose.demo.yml logs -f",
     "test:infra": "node --test infra/",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,css,yml}\" --ignore-path .prettierignore"
   },

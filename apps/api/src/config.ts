@@ -40,6 +40,8 @@ export interface Config {
     audience: string;
     /** Por defecto `${issuer}/protocol/openid-connect/certs`; útil si la API ve Keycloak por otra red. */
     jwksUrl: string;
+    /** Dirección con la que la API llega a Keycloak (p. ej. dentro de Docker: http://keycloak:8081/realms/x). Por defecto, el emisor. */
+    internalIssuer?: string;
     /** Cuenta de servicio para administrar usuarios desde el sistema. Opcional: sin ella, la gestión de usuarios queda deshabilitada. */
     admin: { clientId: string; secret: string } | undefined;
   };
@@ -88,6 +90,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
       issuer,
       audience: env.KEYCLOAK_AUDIENCE ?? 'businesshub-api',
       jwksUrl: env.KEYCLOAK_JWKS_URL ?? `${issuer}/protocol/openid-connect/certs`,
+      ...(env.KEYCLOAK_INTERNAL_ISSUER ? { internalIssuer: env.KEYCLOAK_INTERNAL_ISSUER } : {}),
       admin:
         env.KEYCLOAK_ADMIN_CLIENT_ID && env.KEYCLOAK_ADMIN_CLIENT_SECRET
           ? { clientId: env.KEYCLOAK_ADMIN_CLIENT_ID, secret: env.KEYCLOAK_ADMIN_CLIENT_SECRET }

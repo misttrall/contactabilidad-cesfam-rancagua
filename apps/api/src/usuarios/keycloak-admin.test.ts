@@ -191,4 +191,28 @@ describe('KeycloakAdminService', () => {
     const { svc } = servicio();
     expect(await svc.obtener('u1')).toMatchObject({ id: 'u1', rol: 'funcionaria', centro: 'CSC' });
   });
+
+  it('usa la dirección interna de Keycloak (Docker) para todas las llamadas del servidor', async () => {
+    const llamadas: string[] = [];
+    const svc = new KeycloakAdminService({
+      keycloak: {
+        issuer: 'http://localhost:8081/realms/x',
+        internalIssuer: 'http://keycloak:8081/realms/x',
+        admin: { clientId: 'adm', secret: 's3' },
+      },
+    } as Config);
+    svc.fetchFn = (async (url: string) => {
+      llamadas.push(String(url));
+      if (String(url).endsWith('/token')) {
+        return new Response(JSON.stringify({ access_token: 'T', expires_in: 300 }), {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      return new Response('[]', { headers: { 'Content-Type': 'application/json' } });
+    }) as typeof fetch;
+    await svc.listar().catch(() => undefined);
+    expect(llamadas.length).toBeGreaterThan(1);
+    expect(llamadas.every((u) => u.startsWith('http://keycloak:8081/'))).toBe(true);
+    expect(llamadas.some((u) => u.includes('localhost'))).toBe(false);
+  });
 });

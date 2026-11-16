@@ -1,0 +1,113 @@
+# DEMO LOCAL COMPLETA: todo el sistema en Docker en tu PC, un solo comando, sin instalar Node.
+# Datos 100 % ficticios. No usar fuera de la máquina local (claves y usuarios de demostración PÚBLICOS).
+#
+#   pnpm demo:up       # construye y levanta (la primera vez tarda unos minutos)
+#   → abrir http://localhost:5173  (usuarios en docs/mvp/DEMO_LOCAL.md)
+#   pnpm demo:down     # detiene (conserva los datos)
+#   pnpm demo:reset    # detiene y BORRA los datos para empezar de cero
+#
+# Puertos en tu PC:  web 5173 · API 3001 (DEMO_API_PORT) · Keycloak 8081.
+# Si usas `pnpm infra:up` (desarrollo), detenlo antes: comparte el puerto 8081.
+name: bh-demo
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: businesshub
+      POSTGRES_PASSWORD: businesshub
+      POSTGRES_DB: businesshub
+      TZ: America/Santiago
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U businesshub']
+      interval: 5s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    restart: unless-stopped
+    command: start-dev --import-realm
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8081
+      KC_HEALTH_ENABLED: 'true'
+    ports: ['8081:8081']
+    volumes:
+      - ./infra/keycloak/realm.json:/opt/keycloak/data/import/realm.json:ro
+      - ./infra/keycloak/theme:/opt/keycloak/themes:ro
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          "exec 3<>/dev/tcp/localhost/8081 && echo -e 'GET /realms/businesshub HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '200 OK' <&3",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  api:
+    build: { context: ., dockerfile: infra/despliegue/Dockerfile.api }
+    restart: unless-stopped
+    environment:
+      AMBIENTE: DEMO
+      API_PORT: '3000'
+      PUBLIC_API_URL: http://localhost:${DEMO_API_PORT:-3001}
+      WEB_ORIGINS: http://localhost:5173
+      DATABASE_URL: postgresql://businesshub:businesshub@postgres:5432/businesshub
+      REDIS_URL: redis://redis:6379
+      # Los tokens los emite Keycloak con la dirección que ve el navegador (localhost:8081);
+      # la API lo consulta por la red interna de Docker.
+      KEYCLOAK_ISSUER: http://localhost:8081/realms/businesshub
+      KEYCLOAK_INTERNAL_ISSUER: http://keycloak:8081/realms/businesshub
+      KEYCLOAK_JWKS_URL: http://keycloak:8081/realms/businesshub/protocol/openid-connect/certs
+      KEYCLOAK_ADMIN_CLIENT_ID: businesshub-admin
+      KEYCLOAK_ADMIN_CLIENT_SECRET: dev-admin-secret-no-usar-en-produccion
+      WHATSAPP_MODO: simulador
+    # Migra, siembra el catálogo (idempotente) y arranca.
+    command:
+      - sh
+      - -c
+      - node_modules/.bin/prisma migrate deploy && node_modules/.bin/tsx prisma/seed.ts && node dist/main.js
+    ports: ['${DEMO_API_PORT:-3001}:3000']
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      keycloak: { condition: service_healthy }
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/health']
+      interval: 10s
+      retries: 30
+      start_period: 30s
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/despliegue/Dockerfile.web
+      args:
+        VITE_AMBIENTE: DEMO
+        VITE_API_URL: http://localhost:${DEMO_API_PORT:-3001}
+        VITE_KEYCLOAK_ISSUER: http://localhost:8081/realms/businesshub
+    restart: unless-stopped
+    environment:
+      CSP_API: http://localhost:${DEMO_API_PORT:-3001}
+      CSP_ID: http://localhost:8081
+      CSP_FRAME_ANCESTORS: "'none'"
+    # Puerto 5173: es el que permite el cliente de la web en el realm de demostración.
+    ports: ['5173:80']
+    depends_on:
+      api: { condition: service_healthy }
+
+volumes:
+  pgdata:

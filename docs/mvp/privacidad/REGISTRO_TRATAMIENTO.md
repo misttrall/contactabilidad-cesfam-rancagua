@@ -47,7 +47,7 @@ Los datos **no** se usan para otros fines (no hay marketing, perfilamiento ni de
 | Destinatario | Qué recibe | Observaciones |
 |---|---|---|
 | Meta (WhatsApp Business Platform), **un único número para todos los Cesfam de Rancagua** | teléfono y variables de la plantilla (fecha, hora, nombre del Cesfam). **Sin** nombre del paciente, profesional ni prestación (RN de diseño) | **transferencia internacional** (Meta procesa fuera de Chile): requiere cláusulas/acuerdo y mención en el aviso de privacidad **(DECIDIR)** |
-| Proveedor de nube | todo el contenido cifrado en reposo (disco) | **Piloto con datos ficticios: Cloudflare** (sin datos reales). **Si hay piloto real: Google Cloud, región de Santiago (`southamerica-west1`)**, para mantener los datos en Chile; convenio de encargo con el proveedor |
+| Proveedor de nube | todo el contenido cifrado en reposo (disco) | **Demostración: Docker local en el PC del equipo, solo datos ficticios.** **Si hay piloto real: Google Cloud, región de Santiago (`southamerica-west1`)**, para mantener los datos en Chile; convenio de encargo con el proveedor |
 | Otros | ninguno | no hay venta ni cesión a terceros |
 
 ## 5. Plazos de conservación

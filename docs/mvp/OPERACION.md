@@ -13,44 +13,18 @@ Para quien despliega y mantiene el sistema. Complementa [PLAN_MVP.md](PLAN_MVP.m
 
 Reglas que el software hace cumplir (no dependen de que alguien las recuerde): en PRODUCCION `KEYCLOAK_ISSUER` debe ser `https`, `WHATSAPP_MODO=cloud`, y `DATA_ENCRYPTION_KEY` y `REDIS_URL` son obligatorias; «Restablecer datos demo» responde 403 fuera de DEMO.
 
-**Hosting del piloto (decisión del cliente, 2026-11-16):** el piloto se publica en **Cloudflare** (gratuito) **solo con datos ficticios**; si resulta bien, se despliega en **Google Cloud, región de Santiago**, que es donde pueden vivir datos reales. Ver las restricciones de Cloudflare en el [plan de despliegue](#hosting-del-piloto). Todo se aloja en una **región de Chile** (con datos reales) del proveedor (residencia de datos), en una red privada: Postgres y Redis **no** exponen puertos hacia afuera.
+**Hosting:** el prototipo se muestra en Docker local (ver [Hosting del piloto](#hosting-del-piloto)); con datos reales irá en Google Cloud, región de Santiago. Todo se aloja en una **región de Chile** (con datos reales) del proveedor (residencia de datos), en una red privada: Postgres y Redis **no** exponen puertos hacia afuera.
 
 ## Hosting del piloto
 
-Decisión del cliente (2026-11-16): el piloto va en **Cloudflare** por costo (gratuito) y, si funciona, pasa a **Google Cloud (región de Santiago)**.
+Decisión del cliente (2026-11-16): el prototipo se **muestra desde el PC del equipo, todo en Docker local**, sin servicios en la nube. Ver [DEMO_LOCAL.md](DEMO_LOCAL.md) (un comando: `pnpm demo:up`).
 
 | Etapa | Dónde | Datos | WhatsApp |
 |---|---|---|---|
-| Piloto DEMO/QA | Cloudflare (+ una máquina Linux para el backend, ver abajo) | **solo ficticios** | simulador |
-| Piloto real (si prospera) | Google Cloud `southamerica-west1` (Santiago) | reales, con convenio y base legal | `cloud` (un solo número para todos los Cesfam) |
+| Demostración / prototipo | Docker en el PC (`docker-compose.demo.yml`) | **solo ficticios** | simulador |
+| Piloto real (si prospera) | Google Cloud `southamerica-west1` (Santiago), con el despliegue de `infra/despliegue/` | reales, con convenio y base legal | `cloud` (un solo número para todos los Cesfam) |
 
-**Arquitectura elegida: web en Cloudflare Pages + backend en una máquina (VM) con túnel.**
-El MVP no es solo una web: necesita un servicio Node (NestJS), PostgreSQL, Redis y Keycloak, y eso no corre en Pages ni en Workers tal como está (hasta donde sé; confirmar los límites vigentes del plan gratuito). Por eso:
-
-```
-Navegador ──► Cloudflare Pages (web estática, app.<dominio>)
-    │
-    └──────► Cloudflare Tunnel ─► VM Linux con Docker Compose
-                                   ├─ api (NestJS)        ← api.<dominio>
-                                   ├─ keycloak            ← id.<dominio>
-                                   └─ postgres + redis    (solo red interna)
-```
-
-**Paso a paso (piloto DEMO, datos ficticios):**
-
-1. **Máquina:** una VM o servidor Linux con Docker y Docker Compose (servidor del municipio o una VM barata; ≥ 2 vCPU y 4 GB). Sin puertos abiertos a internet.
-2. **Dominio y túnel:** en Cloudflare (Zero Trust → Tunnels) crear un túnel y copiar su token a `TUNNEL_TOKEN`. Hostnames públicos: `api.<dominio>` → `http://api:3000` e `id.<dominio>` → `http://keycloak:8080`.
-3. **Realm de Keycloak** apuntando a la URL de Pages: `node infra/keycloak/generar-realm.mjs --web https://app.<dominio> --ambiente QA > infra/despliegue/realm-generado.json` (con `KC_ADMIN_SECRET` en el entorno).
-4. **Backend:** completar `.env.qa` (`AMBIENTE=DEMO`, `PUBLIC_API_URL=https://api.<dominio>`, `WEB_ORIGIN=https://app.<dominio>`, `KEYCLOAK_ISSUER=https://id.<dominio>/realms/businesshub`, `KEYCLOAK_ORIGEN=https://id.<dominio>`, `KC_HOSTNAME=id.<dominio>`, `WHATSAPP_MODO=simulador`) y levantar con el perfil del túnel:
-   `docker compose --env-file .env.qa -f docker-compose.qa.yml --profile tunel up -d --build` y luego `… run --rm migrar` y `… exec api node_modules/.bin/tsx prisma/seed.ts` (o la semilla desde la web con «Restablecer datos demo»).
-5. **Web en Pages:** conectar el repositorio (o subir `dist`) con el comando `pnpm install --frozen-lockfile && pnpm --filter @bh/shared --filter @bh/ui build && pnpm --filter @bh/web build`, directorio de salida `apps/web/dist` y variables `VITE_AMBIENTE=DEMO`, `VITE_API_URL=https://api.<dominio>`, `VITE_KEYCLOAK_ISSUER=https://id.<dominio>/realms/businesshub`, **Node 22** (`NODE_VERSION=22`). Después del build, generar las cabeceras:
-   `node infra/despliegue/cloudflare-pages/generar-headers.mjs --api https://api.<dominio> --id https://id.<dominio> > apps/web/dist/_headers` (añadirlo al comando de build). Es la misma CSP que usa nginx, con prueba automática.
-6. **Verificar:** `https://api.<dominio>/health`, ingreso desde `https://app.<dominio>` y la [guía de pruebas](GUIA_PRUEBAS.md).
-7. **Respaldos:** `infra/respaldo/respaldar.sh` en la VM (cron diario) y copia fuera de la máquina.
-
-**Límites a recordar:** (a) el tráfico pasa por Cloudflare (fuera de Chile) y la VM puede estar donde sea: **por eso solo datos ficticios**; (b) un único punto de falla (una máquina) y sin alta disponibilidad: aceptable para un piloto; (c) el túnel reemplaza al balanceador, y `TRUST_PROXY=1` ya está en el compose.
-
-**Regla:** nada con datos reales de pacientes hasta estar en Google Cloud Santiago con convenio firmado y la base legal resuelta. Al migrar: crear el proyecto GCP en `southamerica-west1`, Cloud SQL (PostgreSQL 16) y Memorystore (Redis) o contenedores, Cloud Run/GCE para la API, Keycloak en Cloud Run/GCE con su base; Google Cloud cifra en reposo por defecto (AES-256) los discos y Cloud SQL, y en tránsito; opcionalmente con claves propias (CMEK). Guardar la evidencia (captura de la configuración) en la carpeta de privacidad.
+Google Cloud cifra en reposo por defecto (AES-256) discos y Cloud SQL, y en tránsito; opcionalmente con claves propias (CMEK). Guardar la evidencia (captura de la configuración) en la carpeta de privacidad. **Nada con datos reales hasta estar en Santiago con convenio firmado y la base legal resuelta.**
 
 ## 2. Despliegue
 

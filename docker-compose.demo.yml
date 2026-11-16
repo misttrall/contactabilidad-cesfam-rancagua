@@ -74,7 +74,18 @@ services:
       KEYCLOAK_JWKS_URL: http://keycloak:8081/realms/businesshub/protocol/openid-connect/certs
       KEYCLOAK_ADMIN_CLIENT_ID: businesshub-admin
       KEYCLOAK_ADMIN_CLIENT_SECRET: dev-admin-secret-no-usar-en-produccion
-      WHATSAPP_MODO: simulador
+      # WhatsApp: por defecto simulador. Para WhatsApp real, completar el archivo `.env` de la raíz
+      # (ver docs/mvp/WHATSAPP.md); Docker Compose lo lee solo.
+      WHATSAPP_MODO: ${WHATSAPP_MODO:-simulador}
+      WHATSAPP_TOKEN: ${WHATSAPP_TOKEN:-}
+      WHATSAPP_PHONE_NUMBER_ID: ${WHATSAPP_PHONE_NUMBER_ID:-}
+      WHATSAPP_APP_SECRET: ${WHATSAPP_APP_SECRET:-}
+      WHATSAPP_VERIFY_TOKEN: ${WHATSAPP_VERIFY_TOKEN:-}
+      WHATSAPP_API_VERSION: ${WHATSAPP_API_VERSION:-v21.0}
+      WHATSAPP_PLANTILLA_CONFIRMACION: ${WHATSAPP_PLANTILLA_CONFIRMACION:-confirmacion_hora_v1}
+      WHATSAPP_PLANTILLA_RECORDATORIO: ${WHATSAPP_PLANTILLA_RECORDATORIO:-recordatorio_hora_v1}
+      # Celulares reales del equipo que reciben a los primeros pacientes ficticios (solo DEMO).
+      DEMO_TELEFONOS_PRUEBA: ${DEMO_TELEFONOS_PRUEBA:-}
     # Migra, siembra el catálogo (idempotente) y arranca.
     command:
       - sh

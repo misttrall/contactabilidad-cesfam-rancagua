@@ -200,3 +200,25 @@ describe('TRUST_PROXY', () => {
     expect(() => cargarConfig({ TRUST_PROXY: '-1' })).toThrow(/TRUST_PROXY/);
   });
 });
+
+describe('DEMO_TELEFONOS_PRUEBA (celulares del equipo para ver llegar WhatsApp)', () => {
+  it('se normalizan, se deduplican y solo se aceptan celulares chilenos', () => {
+    expect(
+      cargarConfig({ DEMO_TELEFONOS_PRUEBA: '+56 9 1234 5678, +56912345678 ,+56987654321' })
+        .demoTelefonos,
+    ).toEqual(['+56912345678', '+56987654321']);
+    expect(cargarConfig({}).demoTelefonos).toEqual([]);
+    expect(() => cargarConfig({ DEMO_TELEFONOS_PRUEBA: '12345' })).toThrow(/celular chileno/);
+    expect(() => cargarConfig({ DEMO_TELEFONOS_PRUEBA: '+56212345678' })).toThrow(/celular/);
+  });
+  it('están prohibidos fuera de DEMO (nunca teléfonos reales en QA/PRODUCCION)', () => {
+    expect(() =>
+      cargarConfig({
+        AMBIENTE: 'QA',
+        DEMO_TELEFONOS_PRUEBA: '+56912345678',
+        DATA_ENCRYPTION_KEY: Buffer.alloc(32, 1).toString('base64'),
+        REDIS_URL: 'redis://x',
+      }),
+    ).toThrow(/solo está permitido en el ambiente DEMO/);
+  });
+});

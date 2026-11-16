@@ -38,6 +38,7 @@ import { WebhookService } from './mensajeria/webhook.service';
 import { PrismaService } from './prisma/prisma.service';
 import { ReportesController } from './reportes/reportes.controller';
 import { ReportesService } from './reportes/reportes.service';
+import { CanalConListaBlanca } from './mensajeria/lista-blanca';
 import { PrivacidadController } from './privacidad/privacidad.controller';
 import { PrivacidadService } from './privacidad/privacidad.service';
 import { CANAL, COLA_ENVIOS, CONFIG, RELOJ, VERIFICADOR_TOKEN } from './tokens';
@@ -86,14 +87,22 @@ export class SaludController {
     {
       provide: CANAL,
       inject: [CONFIG],
-      useFactory: (c: Config): CanalMensajeria =>
-        c.whatsapp.modo === 'cloud'
-          ? new CloudApiWhatsApp({
-              token: c.whatsapp.token!,
-              phoneNumberId: c.whatsapp.phoneNumberId!,
-              apiVersion: c.whatsapp.apiVersion,
-            })
-          : new SimuladorWhatsApp(),
+      useFactory: (c: Config): CanalMensajeria => {
+        if (c.whatsapp.modo !== 'cloud') return new SimuladorWhatsApp();
+        const cloud = new CloudApiWhatsApp({
+          token: c.whatsapp.token!,
+          phoneNumberId: c.whatsapp.phoneNumberId!,
+          apiVersion: c.whatsapp.apiVersion,
+        });
+        if (c.ambiente !== 'DEMO') return cloud;
+        // DEMO con WhatsApp real: solo a los celulares del equipo (los pacientes son ficticios).
+        if (c.demoTelefonos.length === 0) {
+          new Logger('WhatsApp').warn(
+            'DEMO con WHATSAPP_MODO=cloud y sin DEMO_TELEFONOS_PRUEBA: no se enviará ningún mensaje',
+          );
+        }
+        return new CanalConListaBlanca(cloud, c.demoTelefonos);
+      },
     },
     PrismaService,
     PrivacidadService,

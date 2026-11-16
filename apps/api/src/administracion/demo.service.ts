@@ -112,7 +112,8 @@ export class DemoService {
       });
       for (let i = 0; i < CITAS_POR_CENTRO; i++, n++) {
         const cuerpo = String(BASE_RUT + n);
-        const telefono = `+569000${String(10_000 + n).slice(-5)}`;
+        // Con DEMO_TELEFONOS_PRUEBA, los primeros pacientes llevan los celulares reales del equipo.
+        const telefono = this.config.demoTelefonos[n] ?? `+569000${String(10_000 + n).slice(-5)}`;
         const prof = profesionales[i % Math.max(profesionales.length, 1)];
         const mayor = i % 3 === 0; // un tercio adultos mayores
         const paciente = await this.prisma.paciente.create({

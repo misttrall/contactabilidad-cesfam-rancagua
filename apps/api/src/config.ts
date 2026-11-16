@@ -16,6 +16,11 @@ export interface Config {
   limitesTasa: boolean;
   /** Nº de proxies de confianza delante de la API (0 = ninguno): da la IP real en límites y auditoría. */
   trustProxy: number;
+  /**
+   * SOLO DEMO: teléfonos reales de prueba del equipo (con WhatsApp) que reciben los primeros pacientes
+   * ficticios al «restablecer datos demo», para ver llegar los mensajes de verdad.
+   */
+  demoTelefonos: string[];
   /** Meses que se conservan los datos personales tras la última cita antes de anonimizarlos. */
   retencionMeses: number;
   /** Redis para la cola de envíos. Sin él, la cola corre en memoria (solo desarrollo y pruebas). */
@@ -79,6 +84,7 @@ export function cargarConfig(env: NodeJS.ProcessEnv = process.env): Config {
     retencionMeses: leerRetencion(env),
     limitesTasa: leerLimitesTasa(env, ambiente),
     trustProxy: leerTrustProxy(env),
+    demoTelefonos: leerDemoTelefonos(env, ambiente),
     redisUrl: env.REDIS_URL || undefined,
     barridoMs,
     whatsapp,
@@ -123,6 +129,25 @@ function leerLimitesTasa(env: NodeJS.ProcessEnv, ambiente: Ambiente): boolean {
     throw new Error('LIMITE_TASA=off no está permitido en PRODUCCION');
   }
   return !apagado;
+}
+
+/** DEMO_TELEFONOS_PRUEBA: celulares chilenos (+569XXXXXXXX) separados por coma. Solo en DEMO. */
+function leerDemoTelefonos(env: NodeJS.ProcessEnv, ambiente: Ambiente): string[] {
+  const lista = (env.DEMO_TELEFONOS_PRUEBA ?? '')
+    .split(',')
+    .map((t) => t.replace(/[\s()-]/g, ''))
+    .filter(Boolean);
+  if (lista.length === 0) return [];
+  if (ambiente !== 'DEMO') {
+    throw new Error('DEMO_TELEFONOS_PRUEBA solo está permitido en el ambiente DEMO');
+  }
+  const malo = lista.find((t) => !/^\+569\d{8}$/.test(t));
+  if (malo) {
+    throw new Error(
+      'DEMO_TELEFONOS_PRUEBA: cada número debe ser un celular chileno (+569XXXXXXXX)',
+    );
+  }
+  return [...new Set(lista)];
 }
 
 function leerTrustProxy(env: NodeJS.ProcessEnv): number {

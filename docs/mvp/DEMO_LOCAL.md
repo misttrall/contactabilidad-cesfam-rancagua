@@ -56,7 +56,7 @@ Contraseña de todos: `Demo-1234!`
 ## Qué es real y qué es simulado
 
 - **Real:** login con roles, base de datos, reglas de negocio, auditoría, cifrado del teléfono, reportes y la exportación a Excel.
-- **Simulado:** WhatsApp (no hay cuenta de Meta; las respuestas se simulan con el botón de demo) y la agenda de AVIS (se carga una planilla de ejemplo; no hay integración).
+- **Simulado:** WhatsApp por defecto (las respuestas se simulan con el botón de demo; para WhatsApp real a los celulares del equipo, ver [WHATSAPP.md](WHATSAPP.md)) y la agenda de AVIS (se carga una planilla de ejemplo; no hay integración).
 
 ## Si algo falla
 

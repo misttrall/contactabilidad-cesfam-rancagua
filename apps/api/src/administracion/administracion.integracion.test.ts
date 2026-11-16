@@ -12,6 +12,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Rol } from '@bh/shared';
 import { AppModule } from '../app.module';
 import { configurarApp } from '../app';
+import { CifradoService } from '../cifrado/cifrado.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { crearEmisor } from '../pruebas/ayudas';
 import { VERIFICADOR_TOKEN } from '../tokens';
@@ -19,6 +20,9 @@ import { KeycloakAdminService, type UsuarioKeycloak } from '../usuarios/keycloak
 
 const URL_PRUEBAS = process.env.TEST_DATABASE_URL;
 if (URL_PRUEBAS) process.env.DATABASE_URL = URL_PRUEBAS;
+// Celulares de prueba del equipo: los primeros pacientes ficticios los reciben (ver docs/mvp/WHATSAPP.md).
+const TELEFONOS_EQUIPO = ['+56911112222', '+56933334444'];
+process.env.DEMO_TELEFONOS_PRUEBA = TELEFONOS_EQUIPO.join(',');
 
 /** Keycloak en memoria con la misma interfaz que el servicio real. */
 class KeycloakFalso {
@@ -476,6 +480,21 @@ describe.skipIf(!URL_PRUEBAS)('Administración (PostgreSQL real)', () => {
         where: { citas: { some: { centroId: centro.id } } },
       });
       expect(p.nombre).toMatch(/^Paciente Demo/);
+
+      // Los primeros pacientes llevan los celulares del equipo; el resto, números ficticios.
+      const cifrado = app.get(CifradoService);
+      const todos = await prisma.paciente.findMany({ orderBy: { nombre: 'asc' } });
+      expect(todos.slice(0, 2).map((x) => cifrado.descifrar(x.telefonoCifrado!))).toEqual(
+        TELEFONOS_EQUIPO,
+      );
+      expect(
+        todos
+          .slice(0, 2)
+          .every(
+            (x) => x.telefonoHash === cifrado.hashBusqueda(cifrado.descifrar(x.telefonoCifrado!)),
+          ),
+      ).toBe(true);
+      expect(cifrado.descifrar(todos[2]!.telefonoCifrado!)).toMatch(/^\+569000/);
 
       expect(await prisma.motivoLlamada.count()).toBe(motivosAntes);
       expect(await prisma.auditEvent.count()).toBeGreaterThan(antesAuditoria); // la bitácora no se borra

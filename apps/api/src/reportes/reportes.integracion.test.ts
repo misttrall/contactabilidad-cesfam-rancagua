@@ -246,13 +246,13 @@ describe.skipIf(!URL_PRUEBAS)('Dashboard y reportes (PostgreSQL real)', () => {
       expect(r.body.kpis.cargadas).toBeGreaterThanOrEqual(7);
     });
 
-    it('sin fecha usa hoy + anticipación (48 h por defecto) en hora de Chile', async () => {
+    it('sin fecha usa hoy + anticipación (24 h por defecto: las horas del día siguiente) en hora de Chile', async () => {
       const r = await http()
         .get('/api/dashboard')
         .set('Authorization', await encargado())
         .expect(200);
       expect(r.body.hoy).toBe('2026-11-20');
-      expect(r.body.fecha).toBe('2026-11-22');
+      expect(r.body.fecha).toBe('2026-11-21');
     });
 
     it('lista próximas a confirmar sin RUT ni teléfono, y llamadas recientes con RUT enmascarado', async () => {

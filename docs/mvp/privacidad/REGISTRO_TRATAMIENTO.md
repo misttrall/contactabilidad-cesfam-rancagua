@@ -6,7 +6,7 @@
 
 | Rol | Quién |
 |---|---|
-| Responsable del tratamiento | **(DECIDIR)** Dirección de Salud municipal / Cesfam |
+| Responsable del tratamiento | César (encargado del call center de los Cesfam de Rancagua); el convenio y la base legal se formalizan al decidir continuar con la implementación |
 | Encargado del tratamiento | **(DECIDIR)** proveedor de BusinessHub Salud (convenio de tratamiento de datos pendiente: PLAN_MVP §7.4) |
 | Subencargados | Proveedor de nube (región Chile); Meta Platforms (WhatsApp Business Platform) |
 | Contacto de privacidad / delegado | César, encargado del call center de los Cesfam de Rancagua (definido por el cliente el 2026-11-16) |

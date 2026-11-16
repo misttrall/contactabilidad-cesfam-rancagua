@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { construirCapabilityStatement } from './capability';
 import { estadoDesdeBusinessStatus, MAPEO_ESTADO_FHIR } from './mapeo-estados';
 import { pacienteAFhir, resumenParaLog } from './recursos';
+import { organizacionAFhir, ubicacionAFhir } from './catalogos';
 
 describe('mapeo de estados a FHIR', () => {
   it('RN-01: ningún estado de contactabilidad cancela el Appointment', () => {
@@ -49,5 +50,17 @@ describe('CapabilityStatement', () => {
     });
     expect(c.fhirVersion).toBe('4.0.1');
     expect(c.format).toEqual(['json']);
+  });
+});
+
+describe('teléfono de contacto del centro', () => {
+  const c = { id: 'c1', codigo: 'CSC', nombre: 'CESFAM Centro', activo: true };
+  it('se publica como telecom en Organization y Location solo si existe', () => {
+    const con = { ...c, telefonoContacto: '+56 72 255 0000' };
+    const tel = [{ system: 'phone', value: '+56 72 255 0000', use: 'work' }];
+    expect(organizacionAFhir(con).telecom).toEqual(tel);
+    expect(ubicacionAFhir(con).telecom).toEqual(tel);
+    expect(organizacionAFhir(c)).not.toHaveProperty('telecom');
+    expect(ubicacionAFhir({ ...c, telefonoContacto: null })).not.toHaveProperty('telecom');
   });
 });

@@ -598,6 +598,7 @@ export const exportarReporte = (p: { centro: string; desde: string; hasta: strin
 
 export interface CentroAdmin extends Centro {
   activo: boolean;
+  telefonoContacto: string | null;
 }
 export const useCentrosAdmin = () =>
   useQuery({
@@ -618,7 +619,15 @@ export function useCrearCentro() {
 export function useEditarCentro() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, ...d }: { id: string; nombre?: string; activo?: boolean }) =>
+    mutationFn: ({
+      id,
+      ...d
+    }: {
+      id: string;
+      nombre?: string;
+      activo?: boolean;
+      telefonoContacto?: string | null;
+    }) =>
       apiFetch<CentroAdmin>(`/api/config/centros/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(d),

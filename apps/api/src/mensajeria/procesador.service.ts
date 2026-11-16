@@ -82,7 +82,7 @@ export class ProcesadorEnvio implements ProcesadorDeMensajes {
         const info = await this.parametros.leer('mensajes.reagendamiento_info');
         ({ proveedorId } = await this.canal.enviarTexto({
           para,
-          texto: textoReagendamiento(info),
+          texto: textoReagendamiento(info, m.cita.centro.telefonoContacto),
         }));
       } else {
         const datos = {

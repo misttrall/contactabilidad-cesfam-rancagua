@@ -228,6 +228,11 @@ Pasar del prototipo navegable (todo simulado) a un **sistema funcional con backe
 | 1–3, 8 | **Formato AVIS, edad/sexo, RUT con otro formato e integración para liberar horas: pendientes del Cesfam** (no hay acceso a AVIS); se ajustan en la implementación. |
 | 13 | **Contacto de privacidad: César, encargado del call center de los Cesfam de Rancagua.** Plazos propuestos aceptados (retención 12 meses, bitácora 24 meses, RPO 24 h / RTO 4 h, respaldos 30 días + 12 mensuales) salvo objeción. **Hosting:** piloto en Cloudflare con datos ficticios; si prospera, Google Cloud región Santiago (ver OPERACION.md). |
 | 14 | Documentos de privacidad aceptados como borrador de trabajo; la revisión jurídica sigue pendiente. |
+| 4 | **Se confirman las horas del día siguiente:** anticipación por defecto **24 h** (antes 48 h); la pantalla de confirmación propone la fecha de mañana. Sigue siendo un parámetro editable. |
+| 5 | **WhatsApp/Meta: aún no hay nada configurado** (cuenta, número, verificación ni plantillas). El texto de la plantilla se define al crearla en Meta; mientras tanto el sistema usa el simulador. |
+| 7 | **Los mensajes indican el número para contactar al Cesfam y atender el requerimiento.** Como hay un solo número de WhatsApp, cada centro tiene su **teléfono de contacto** (Configuración → Centros) y el mensaje de reagendamiento lo incluye. Pendiente: confirmar los teléfonos reales y si la plantilla de confirmación también debe llevarlo (hoy no). |
+| 10, 11 | **Responsable: César.** El convenio de tratamiento y la base legal se definen **cuando decidan continuar con la implementación**. Hasta entonces, solo datos ficticios. |
+| 12 | **Puestos de trabajo: se mantiene 1366×768 como referencia** hasta confirmarlo en la implementación. |
 | 19 | Versiones de CL Core (`1.9.2`) y Agenda APS (`current`) fijadas; se revisan por hito. |
 | 21, 22 | Hecho: Node 22 (`.nvmrc`, `engines`), Dependabot y auditoría en CI. |
 | 23 | Limitador de tasa en Redis: **para después** (al usar más de una instancia). |

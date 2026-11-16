@@ -47,8 +47,12 @@ function FilaCentro({ c }: { c: CentroAdmin }) {
   const editar = useEditarCentro();
   const [editando, setEditando] = useState(false);
   const [nombre, setNombre] = useState(c.nombre);
+  const [telefono, setTelefono] = useState(c.telefonoContacto ?? '');
   const guardar = () =>
-    editar.mutate({ id: c.id, nombre }, { onSuccess: () => setEditando(false) });
+    editar.mutate(
+      { id: c.id, nombre, telefonoContacto: telefono },
+      { onSuccess: () => setEditando(false) },
+    );
   return (
     <tr>
       <td className="tabular">{c.codigo}</td>
@@ -64,6 +68,20 @@ function FilaCentro({ c }: { c: CentroAdmin }) {
           c.nombre
         )}
         <Mensaje e={editar.error} />
+      </td>
+      <td className="tabular">
+        {editando ? (
+          <input
+            className="bh-input"
+            aria-label={`Teléfono de contacto del centro ${c.codigo}`}
+            placeholder="+56 72 …"
+            inputMode="tel"
+            value={telefono}
+            onChange={(e) => setTelefono(e.target.value)}
+          />
+        ) : (
+          (c.telefonoContacto ?? 'Sin teléfono')
+        )}
       </td>
       <td>
         <EstadoActivo activo={c.activo} />
@@ -84,6 +102,7 @@ function FilaCentro({ c }: { c: CentroAdmin }) {
                 onClick={() => {
                   setEditando(false);
                   setNombre(c.nombre);
+                  setTelefono(c.telefonoContacto ?? '');
                   editar.reset();
                 }}
               >
@@ -143,6 +162,7 @@ function Centros() {
             <tr>
               <th scope="col">Código</th>
               <th scope="col">Nombre</th>
+              <th scope="col">Teléfono de contacto</th>
               <th scope="col">Estado</th>
               <th scope="col">
                 <span className="solo-lectores">Acciones</span>

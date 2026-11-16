@@ -8,6 +8,7 @@ import {
   payloadBoton,
   proximoInstanteEnVentana,
   textoConfirmacion,
+  textoReagendamiento,
   textoRecordatorio,
   validarParametro,
 } from './mensajeria';
@@ -52,6 +53,22 @@ describe('textos de las plantillas', () => {
       expect(t).not.toMatch(/DM2|HTA|diabetes|hipertens|control cr[oó]nico|Dra\.|Dr\./i);
     }
     expect(parametrosPlantilla(d)).toHaveLength(3);
+  });
+});
+
+describe('texto de reagendamiento', () => {
+  it('agrega el teléfono del Cesfam cuando existe', () => {
+    expect(textoReagendamiento('Info.', '+56 72 255 0000')).toBe(
+      'Gracias por avisar. Registramos que no podrá asistir. Info. Para reagendar o atender su requerimiento, llame al +56 72 255 0000.',
+    );
+  });
+  it('sin teléfono (o vacío) no inventa nada', () => {
+    expect(textoReagendamiento('Info.')).not.toContain('llame al');
+    expect(textoReagendamiento('Info.', '  ')).not.toContain('llame al');
+    expect(textoReagendamiento('Info.', null)).not.toContain('llame al');
+  });
+  it('nunca incluye datos del paciente (solo recibe texto genérico y el teléfono del centro)', () => {
+    expect(textoReagendamiento.length).toBeLessThanOrEqual(2);
   });
 });
 

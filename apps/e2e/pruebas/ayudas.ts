@@ -59,7 +59,7 @@ async function tokenDe(page: Page): Promise<string> {
 export async function fijarVentanaEnvio(
   page: Page,
   ventana: { desde: string; hasta: string },
-  apiUrl = 'http://localhost:3000',
+  apiUrl = `http://localhost:${process.env.E2E_API_PORT ?? '3000'}`,
 ) {
   const r = await page.request.patch(`${apiUrl}/api/config/parametros/envio.ventana_horaria`, {
     headers: { Authorization: `Bearer ${await tokenDe(page)}` },

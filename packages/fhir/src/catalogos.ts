@@ -22,6 +22,7 @@ export interface FhirOrganization {
   active: boolean;
   identifier: { system: string; value: string }[];
   name: string;
+  telecom?: { system: 'phone'; value: string; use: 'work' }[];
 }
 
 export interface FhirLocation {
@@ -31,6 +32,7 @@ export interface FhirLocation {
   name: string;
   identifier: { system: string; value: string }[];
   managingOrganization: { reference: string; display: string };
+  telecom?: { system: 'phone'; value: string; use: 'work' }[];
 }
 
 export interface FhirPractitioner {
@@ -81,6 +83,8 @@ export interface CentroDominio {
   codigo: string;
   nombre: string;
   activo: boolean;
+  /** Teléfono público del Cesfam. */
+  telefonoContacto?: string | null | undefined;
 }
 
 /**
@@ -94,7 +98,14 @@ export function organizacionAFhir(c: CentroDominio): FhirOrganization {
     active: c.activo,
     identifier: [{ system: LOCAL_CENTRO, value: c.codigo }],
     name: c.nombre,
+    ...telecomCentro(c),
   };
+}
+
+function telecomCentro(c: CentroDominio) {
+  return c.telefonoContacto
+    ? { telecom: [{ system: 'phone' as const, value: c.telefonoContacto, use: 'work' as const }] }
+    : {};
 }
 
 /** Cada Cesfam es a la vez Organization (quien presta) y Location (donde se atiende). */
@@ -106,6 +117,7 @@ export function ubicacionAFhir(c: CentroDominio): FhirLocation {
     name: c.nombre,
     identifier: [{ system: LOCAL_CENTRO, value: c.codigo }],
     managingOrganization: { reference: `Organization/${c.id}`, display: c.nombre },
+    ...telecomCentro(c),
   };
 }
 

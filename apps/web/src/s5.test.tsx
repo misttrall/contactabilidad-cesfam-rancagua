@@ -396,6 +396,31 @@ describe('Configuración', () => {
     );
   });
 
+  it('edita el teléfono de contacto del centro y lo envía junto con el nombre', async () => {
+    respuestas['PATCH /api/config/centros/c2'] = {
+      id: 'c2',
+      codigo: 'CSN',
+      nombre: 'CESFAM Norte (DEMO)',
+      activo: false,
+      telefonoContacto: '+56 72 255 0000',
+    };
+    montar('/configuracion');
+    expect((await screen.findAllByText('Sin teléfono')).length).toBeGreaterThan(0);
+    fireEvent.click(
+      await screen.findByRole('button', { name: 'Editar el centro CESFAM Norte (DEMO)' }),
+    );
+    fireEvent.change(screen.getByLabelText('Teléfono de contacto del centro CSN'), {
+      target: { value: '+56 72 255 0000' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+    await waitFor(() =>
+      expect(cuerpo('PATCH', '/api/config/centros/c2')).toEqual({
+        nombre: 'CESFAM Norte (DEMO)',
+        telefonoContacto: '+56 72 255 0000',
+      }),
+    );
+  });
+
   it('reordena motivos; no se puede subir el primero ni bajar el último', async () => {
     respuestas['POST /api/config/motivos/m2/mover'] = [];
     montar('/configuracion');

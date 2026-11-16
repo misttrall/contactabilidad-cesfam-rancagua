@@ -44,6 +44,25 @@ const idOr404 = (id: string, que: string) => {
 const esUnicidad = (e: unknown) =>
   e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002';
 
+const SELECT_CENTRO = {
+  id: true,
+  codigo: true,
+  nombre: true,
+  activo: true,
+  telefonoContacto: true,
+} as const;
+/** Teléfono público del Cesfam (se le dice al paciente). Vacío = sin teléfono. */
+const telefonoContactoSchema = z
+  .string()
+  .trim()
+  .max(20)
+  .regex(
+    /^([+0-9() -]{6,20})?$/,
+    'Teléfono no válido: solo dígitos, +, espacios, guiones o paréntesis',
+  )
+  .transform((v) => (v === '' ? null : v))
+  .nullable();
+
 const centroNuevoSchema = z
   .object({
     codigo: z
@@ -52,14 +71,22 @@ const centroNuevoSchema = z
       .toUpperCase()
       .regex(/^[A-Z0-9]{2,12}$/, 'Código de 2 a 12 letras o números'),
     nombre: z.string().trim().min(3, 'El nombre es muy corto').max(80),
+    telefonoContacto: telefonoContactoSchema.optional(),
   })
   .strict();
 const centroEdicionSchema = z
-  .object({ nombre: z.string().trim().min(3).max(80).optional(), activo: z.boolean().optional() })
+  .object({
+    nombre: z.string().trim().min(3).max(80).optional(),
+    activo: z.boolean().optional(),
+    telefonoContacto: telefonoContactoSchema.optional(),
+  })
   .strict()
-  .refine((d) => d.nombre !== undefined || d.activo !== undefined, {
-    message: 'Indica qué cambiar',
-  });
+  .refine(
+    (d) => d.nombre !== undefined || d.activo !== undefined || d.telefonoContacto !== undefined,
+    {
+      message: 'Indica qué cambiar',
+    },
+  );
 const motivoNuevoSchema = z
   .object({
     codigo: z
@@ -128,7 +155,7 @@ export class AdministracionController {
   centros() {
     return this.prisma.centro.findMany({
       orderBy: { nombre: 'asc' },
-      select: { id: true, codigo: true, nombre: true, activo: true },
+      select: SELECT_CENTRO,
     });
   }
 
@@ -142,7 +169,7 @@ export class AdministracionController {
     try {
       const c = await this.prisma.centro.create({
         data: d,
-        select: { id: true, codigo: true, nombre: true, activo: true },
+        select: SELECT_CENTRO,
       });
       await this.auditar(s, req, 'centro.crear', 'centro', c.id, { codigo: c.codigo });
       return c;
@@ -168,8 +195,9 @@ export class AdministracionController {
       data: {
         ...(d.nombre !== undefined ? { nombre: d.nombre } : {}),
         ...(d.activo !== undefined ? { activo: d.activo } : {}),
+        ...(d.telefonoContacto !== undefined ? { telefonoContacto: d.telefonoContacto } : {}),
       },
-      select: { id: true, codigo: true, nombre: true, activo: true },
+      select: SELECT_CENTRO,
     });
     await this.auditar(s, req, 'centro.actualizar', 'centro', id, {
       codigo: actual.codigo,

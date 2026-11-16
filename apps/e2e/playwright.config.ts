@@ -11,6 +11,9 @@ import { defineConfig, devices } from '@playwright/test';
  *             CI=1              usa Chromium de Playwright (`playwright install --with-deps chromium`).
  */
 const CANAL = process.env.E2E_CANAL;
+/** Puerto de la API (cámbialo si el 3000 está ocupado por otro servicio): E2E_API_PORT=3001. */
+const API_PORT = process.env.E2E_API_PORT ?? '3000';
+const API_URL = `http://localhost:${API_PORT}`;
 
 export default defineConfig({
   testDir: './pruebas',
@@ -51,7 +54,8 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm --filter @bh/api dev',
-      url: 'http://localhost:3000/health',
+      url: `${API_URL}/health`,
+      env: { API_PORT, PUBLIC_API_URL: API_URL },
       reuseExistingServer: true,
       timeout: 120_000,
       cwd: '../..',
@@ -59,6 +63,7 @@ export default defineConfig({
     {
       command: 'pnpm --filter @bh/web dev',
       url: 'http://localhost:5173',
+      env: { VITE_API_URL: API_URL },
       reuseExistingServer: true,
       timeout: 120_000,
       cwd: '../..',

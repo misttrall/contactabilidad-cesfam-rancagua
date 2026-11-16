@@ -14,7 +14,7 @@ const PROFESIONALES_DEMO = [
 ];
 
 const PARAMETROS = {
-  'envio.anticipacion_horas': 48,
+  'envio.anticipacion_horas': 24,
   'envio.ventana_horaria': { desde: '09:00', hasta: '18:00' },
   'envio.horas_espera_respuesta': 24,
   'envio.segundo_mensaje_adulto_mayor': true,

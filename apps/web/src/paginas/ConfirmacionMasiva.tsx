@@ -26,10 +26,10 @@ const MOTIVO: Record<NonNullable<FilaConfirmacion['motivoNoSeleccionable']>, str
   sin_telefono: 'Sin teléfono',
 };
 
-/** Fecha de hoy + 2 días en hora de Chile (la anticipación por defecto); el servidor sugiere la exacta. */
+/** Fecha de mañana en hora de Chile (se confirman las horas del día siguiente: anticipación por defecto de 24 h); el servidor sugiere la exacta. */
 function fechaInicial(): string {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Santiago' }).format(
-    new Date(Date.now() + 2 * 86_400_000),
+    new Date(Date.now() + 86_400_000),
   );
 }
 

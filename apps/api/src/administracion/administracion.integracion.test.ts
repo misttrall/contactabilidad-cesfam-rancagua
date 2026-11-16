@@ -200,6 +200,42 @@ describe.skipIf(!URL_PRUEBAS)('Administración (PostgreSQL real)', () => {
     });
   });
 
+  describe('teléfono de contacto del centro', () => {
+    it('se guarda, se normaliza (vacío = sin teléfono), se valida y queda auditado', async () => {
+      const c = await prisma.centro.findUniqueOrThrow({ where: { codigo: CA } });
+      const a = await admin();
+      const url = `/api/config/centros/${c.id}`;
+      const ok = await http()
+        .patch(url)
+        .set('Authorization', a)
+        .send({ telefonoContacto: '  +56 72 255 0000 ' })
+        .expect(200);
+      expect(ok.body.telefonoContacto).toBe('+56 72 255 0000');
+      await http()
+        .patch(url)
+        .set('Authorization', a)
+        .send({ telefonoContacto: 'llámame' })
+        .expect(400);
+      await http().patch(url).set('Authorization', a).send({ telefonoContacto: '123' }).expect(400);
+      const vacio = await http()
+        .patch(url)
+        .set('Authorization', a)
+        .send({ telefonoContacto: '' })
+        .expect(200);
+      expect(vacio.body.telefonoContacto).toBeNull();
+      const lista = await http().get('/api/config/centros').set('Authorization', a).expect(200);
+      expect(lista.body.find((x: { id: string }) => x.id === c.id)).toHaveProperty(
+        'telefonoContacto',
+        null,
+      );
+      const ev = await prisma.auditEvent.findFirst({
+        where: { accion: 'centro.actualizar', recursoId: c.id },
+        orderBy: { ocurrioEn: 'desc' },
+      });
+      expect(ev).not.toBeNull();
+    });
+  });
+
   describe('motivos', () => {
     it('crea al final de la lista, rechaza duplicados y permite reordenar', async () => {
       const a = await admin();

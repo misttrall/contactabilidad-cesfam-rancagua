@@ -105,8 +105,14 @@ export function textoRecordatorio(d: DatosMensajeCita): string {
   return `Le recordamos su hora de control en ${centro} el ${fecha} a las ${hora}. Aún no recibimos su respuesta: ¿asistirá?`;
 }
 
-export function textoReagendamiento(info: string): string {
-  return `Gracias por avisar. Registramos que no podrá asistir. ${info}`;
+/**
+ * Respuesta al «No». Hay UN solo número de WhatsApp para todos los Cesfam: el teléfono para
+ * reagendar y atender su requerimiento es el del Cesfam del paciente (si está configurado).
+ */
+export function textoReagendamiento(info: string, telefonoCentro?: string | null): string {
+  const base = `Gracias por avisar. Registramos que no podrá asistir. ${info}`;
+  const tel = telefonoCentro?.trim();
+  return tel ? `${base} Para reagendar o atender su requerimiento, llame al ${tel}.` : base;
 }
 
 export const TEXTO_BAJA =
@@ -172,7 +178,8 @@ export const ventanaSchema = z
 export const PARAMETROS = {
   'envio.anticipacion_horas': {
     schema: z.number().int().min(1).max(720),
-    porDefecto: 48 as number,
+    // El Cesfam confirma las horas del día siguiente.
+    porDefecto: 24 as number,
     descripcion: 'Horas de anticipación con que se envía la confirmación',
   },
   'envio.ventana_horaria': {
@@ -202,8 +209,7 @@ export const PARAMETROS = {
   },
   'mensajes.reagendamiento_info': {
     schema: z.string().trim().min(5).max(300),
-    porDefecto:
-      'Para reagendar su hora comuníquese con su Cesfam o use los canales de reagendamiento disponibles.' as string,
+    porDefecto: 'Puede reagendar su hora comunicándose con su Cesfam.' as string,
     descripcion: 'Texto de ayuda para reagendar cuando el paciente responde «No»',
   },
 } as const;

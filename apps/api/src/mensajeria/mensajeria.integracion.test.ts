@@ -656,6 +656,32 @@ describe.skipIf(!URL_PRUEBAS)('Confirmación por WhatsApp (PostgreSQL real)', ()
       expect((await mensajeDe(e.citaId, 'reagendamiento')).estado).toBe('enviado');
     });
 
+    it('el mensaje de reagendamiento indica el teléfono del Cesfam del paciente (un solo número de WhatsApp)', async () => {
+      await prisma.centro.update({
+        where: { id: centroA.id },
+        data: { telefonoContacto: '+56 72 255 0000' },
+      });
+      try {
+        const e = await enviada();
+        canal.enviados.length = 0;
+        await webhook(meta({ messages: [boton(e.telefono!, 'NO', e.mensaje.id)] })).expect(200);
+        await cola.drenar();
+        expect(canal.enviados[0]).toMatchObject({
+          texto: expect.stringContaining('llame al +56 72 255 0000'),
+        });
+      } finally {
+        await prisma.centro.update({ where: { id: centroA.id }, data: { telefonoContacto: null } });
+      }
+    });
+
+    it('sin teléfono configurado el mensaje de reagendamiento sale igual, sin número', async () => {
+      const e = await enviada();
+      canal.enviados.length = 0;
+      await webhook(meta({ messages: [boton(e.telefono!, 'NO', e.mensaje.id)] })).expect(200);
+      await cola.drenar();
+      expect(canal.enviados[0]?.texto).not.toContain('llame al');
+    });
+
     it('«Cancelado» NO es «Sin respuesta»: la cita sigue vigente en AVIS hasta que alguien la libere (RN-01)', async () => {
       const e = await enviada();
       await webhook(meta({ messages: [boton(e.telefono!, 'NO', e.mensaje.id)] }));

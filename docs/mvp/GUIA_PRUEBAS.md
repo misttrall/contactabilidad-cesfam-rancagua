@@ -53,6 +53,7 @@ Actualizada en S6. Para la sesión de pruebas con el equipo del Cesfam y para la
 | # | Paso | Resultado esperado |
 |---|---|---|
 | D1 | Configuración → Centros: crear, renombrar, desactivar. | Se refleja en los selectores; un centro desactivado no recibe cargas. |
+| D1b | Centros → Editar → **Teléfono de contacto** (p. ej. `+56 72 255 0000`). | Se guarda; si el paciente responde «No», el mensaje de reagendamiento incluye «llame al …» de su Cesfam. |
 | D2 | Motivos de llamada: agregar, reordenar, desactivar. | El orden se ve en Llamada entrante. |
 | D3 | Usuarios: cambiar rol/centro, desactivar a un usuario de prueba. | El usuario desactivado pierde el acceso en segundos; nadie puede quitarse su propio rol de administrador. |
 | D4 | Privacidad: anonimización de datos antiguos y derechos del titular. | Por API (ver [PROCEDIMIENTO_ARCO.md](privacidad/PROCEDIMIENTO_ARCO.md)); queda en la bitácora. |

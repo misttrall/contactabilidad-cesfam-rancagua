@@ -71,7 +71,7 @@ const LISTADO = {
   opciones: {
     modo: 'simulador',
     puedeSimular: true,
-    anticipacionHoras: 48,
+    anticipacionHoras: 24,
     ventana: { desde: '09:00', hasta: '18:00' },
     horasEspera: 24,
     fechaSugerida: '2026-11-25',

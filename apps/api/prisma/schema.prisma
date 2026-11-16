@@ -23,6 +23,8 @@ model Centro {
   codigo            String            @unique
   nombre            String
   activo            Boolean           @default(true)
+  /// Teléfono del Cesfam que se indica a los pacientes (p. ej. al reagendar). Es público, no personal.
+  telefonoContacto  String?
   creadoEn          DateTime          @default(now()) @db.Timestamptz(6)
   usuarios          Usuario[]
   profesionales     Profesional[]

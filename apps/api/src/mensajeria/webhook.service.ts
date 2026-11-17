@@ -5,7 +5,9 @@ import { interpretarTexto, parsearPayloadBoton } from '@bh/shared';
 import { z } from 'zod';
 import { CifradoService } from '../cifrado/cifrado.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { RELOJ } from '../tokens';
+import type { Config } from '../config';
+import { CANAL, CONFIG, RELOJ } from '../tokens';
+import { telefonoParaWhatsapp, type CanalMensajeria } from './canal';
 import type { Reloj } from './procesador.service';
 import { RespuestasService, type ResultadoRespuesta } from './respuestas.service';
 
@@ -90,6 +92,8 @@ export class WebhookService {
     @Inject(CifradoService) private readonly cifrado: CifradoService,
     @Inject(RespuestasService) private readonly respuestas: RespuestasService,
     @Inject(RELOJ) private readonly reloj: Reloj,
+    @Inject(CONFIG) private readonly config: Config,
+    @Inject(CANAL) private readonly canal: CanalMensajeria,
   ) {}
 
   /** Procesa un cuerpo ya validado. Es idempotente: Meta reintenta entregas. */
@@ -199,7 +203,9 @@ export class WebhookService {
       }
     } else if (msg.type === 'text' && msg.text?.body) {
       const accion = interpretarTexto(msg.text.body);
-      if (accion === 'baja') {
+      if (await this.responderPing(msg)) {
+        // Diagnóstico de la demo: no toca ninguna cita; solo queda el registro.
+      } else if (accion === 'baja') {
         resultado = await this.aplicar('baja', '', telefonoHash);
       } else if (accion) {
         // Texto libre: solo si ese teléfono tiene UNA cita esperando respuesta (si no, es ambiguo).
@@ -225,6 +231,28 @@ export class WebhookService {
       if (!(e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002')) throw e;
     }
     this.log.log(`respuesta de paciente: ${resultado}`);
+  }
+
+  /**
+   * SOLO DEMO: si un celular del equipo (DEMO_TELEFONOS_PRUEBA) escribe «ping», responde «pong» en el
+   * mismo WhatsApp para comprobar de punta a punta la conexión (webhook entrante y envío saliente).
+   * No guarda el texto ni toca citas. En QA/PRODUCCION no hace nada.
+   */
+  private async responderPing(msg: Entrante): Promise<boolean> {
+    if (this.config.ambiente !== 'DEMO') return false;
+    if (msg.text?.body?.trim().toLowerCase() !== 'ping') return false;
+    const telefono = `+${msg.from.replace(/\D/g, '')}`;
+    if (!this.config.demoTelefonos.includes(telefono)) return false;
+    try {
+      await this.canal.enviarTexto({
+        para: telefonoParaWhatsapp(telefono),
+        texto: 'pong · BusinessHub Salud (demo): la conexión con WhatsApp funciona.',
+      });
+      this.log.log('ping de prueba respondido');
+    } catch (e) {
+      this.log.warn(`ping de prueba sin respuesta: ${e instanceof Error ? e.message : 'error'}`);
+    }
+    return true;
   }
 
   private async aplicar(

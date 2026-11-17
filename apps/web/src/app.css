@@ -418,11 +418,12 @@ input[type='file'].bh-input {
 
 .datos {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: var(--space-3);
 }
 .dato {
   display: grid;
+  min-width: 0; /* una etiqueta larga no debe desbordar la tarjeta */
   gap: 2px;
   padding: var(--space-3);
   background: var(--color-surface-muted);
@@ -437,6 +438,14 @@ input[type='file'].bh-input {
 .dato__etiqueta {
   font-size: var(--text-sm);
   color: var(--color-text-secondary);
+}
+/* Los badges de estado son nowrap: dentro de una tarjeta deben poder partirse en dos líneas. */
+.dato__etiqueta {
+  min-width: 0;
+}
+.dato__etiqueta .bh-badge {
+  max-width: 100%;
+  white-space: normal;
 }
 .dato[data-tono='ok'] .dato__valor {
   color: var(--estado-confirmado-fg);

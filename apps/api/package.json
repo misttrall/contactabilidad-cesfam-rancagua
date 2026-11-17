@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:dev": "prisma migrate dev",
     "db:seed": "tsx prisma/seed.ts",
-    "rotar-claves": "tsx scripts/rotar-claves.ts"
+    "rotar-claves": "tsx scripts/rotar-claves.ts",
+    "planilla-demo": "tsx scripts/planilla-demo.ts"
   },
   "dependencies": {
     "@bh/fhir": "workspace:*",

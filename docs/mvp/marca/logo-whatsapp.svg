@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640" role="img" aria-label="BusinessHub Salud">
+  <rect width="640" height="640" fill="#0f5c6e"/>
+  <!-- Globo de conversación (mensajería) -->
+  <rect x="150" y="150" width="340" height="290" rx="72" fill="#ffffff"/>
+  <polygon points="205,420 168,505 282,436" fill="#ffffff"/>
+  <!-- Cruz (salud) -->
+  <rect x="293" y="228" width="54" height="134" rx="12" fill="#0f5c6e"/>
+  <rect x="253" y="268" width="134" height="54" rx="12" fill="#0f5c6e"/>
+</svg>

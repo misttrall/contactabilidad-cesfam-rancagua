@@ -39,6 +39,7 @@ import { PrismaService } from './prisma/prisma.service';
 import { ReportesController } from './reportes/reportes.controller';
 import { ReportesService } from './reportes/reportes.service';
 import { CanalConListaBlanca } from './mensajeria/lista-blanca';
+import { PaginasPublicasController } from './publico/paginas.controller';
 import { PrivacidadController } from './privacidad/privacidad.controller';
 import { PrivacidadService } from './privacidad/privacidad.service';
 import { CANAL, COLA_ENVIOS, CONFIG, RELOJ, VERIFICADOR_TOKEN } from './tokens';
@@ -75,6 +76,7 @@ export class SaludController {
     ReportesController,
     AdministracionController,
     PrivacidadController,
+    PaginasPublicasController,
   ],
   providers: [
     { provide: CONFIG, useFactory: () => cargarConfig() },

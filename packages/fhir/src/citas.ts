@@ -15,6 +15,8 @@ export interface FhirAppointment {
   serviceType: { text: string }[];
   appointmentType: { coding: { system: string; code: string }[] };
   start: string;
+  /** FHIR exige `end` cuando hay `start` (app-2). */
+  end: string;
   participant: {
     actor: { reference?: string; display?: string };
     status: 'needs-action' | 'accepted' | 'declined';
@@ -44,6 +46,19 @@ export interface CitaDominio {
 }
 
 /**
+ * Duración del bloque de atención. AVIS no exporta el término de la cita, pero FHIR exige `end`
+ * junto con `start`: se usa el bloque estándar de 30 minutos (ver docs/mvp/PLAN_MVP.md).
+ */
+export const DURACION_BLOQUE_MINUTOS = 30;
+
+/** `09:30` + 30 min = `10:00` (sin pasar de las 23:59 del mismo día). */
+export function sumarMinutos(hora: string, minutos: number): string {
+  const [h = '0', m = '0'] = hora.split(':');
+  const total = Math.min(Number(h) * 60 + Number(m) + minutos, 23 * 60 + 59);
+  return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`;
+}
+
+/**
  * Clave pública estable de una cita para deduplicar entre sistemas. Es un hash: el identificador
  * no debe llevar el RUT en claro.
  */
@@ -65,6 +80,7 @@ export function citaAFhir(c: CitaDominio): FhirAppointment {
     serviceType: [{ text: c.prestacion }],
     appointmentType: { coding: [{ system: LOCAL_TIPO_CITA, code: c.tipo }] },
     start: instanteSantiago(c.fecha, c.hora),
+    end: instanteSantiago(c.fecha, sumarMinutos(c.hora, DURACION_BLOQUE_MINUTOS)),
     participant: [
       { actor: { reference: `Patient/${c.pacienteId}` }, status: 'needs-action' },
       { actor: { reference: `Location/${c.centroId}` }, status: 'accepted' },

@@ -24,6 +24,9 @@
     "reference": "Patient/00000000-0000-4000-8000-000000000004"
   },
   "dateTime": "2026-11-20T15:00:00.000Z",
+  "policyRule": {
+    "text": "Baja del canal WhatsApp solicitada por el titular (Ley 21.719)"
+  },
   "provision": {
     "type": "deny",
     "purpose": [

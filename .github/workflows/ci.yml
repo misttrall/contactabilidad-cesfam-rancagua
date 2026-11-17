@@ -64,7 +64,7 @@ jobs:
       - name: Ejemplos FHIR (estructura)
         run: pnpm --filter @bh/fhir validate
       - name: Infraestructura (realm QA/PROD, CSP y nginx)
-        run: node --test infra/
+        run: pnpm test:infra
       - name: Sintaxis de los scripts de respaldo
         run: for f in infra/respaldo/*.sh; do bash -n "$f"; done
 
@@ -113,7 +113,14 @@ jobs:
           done
           docker logs keycloak | tail -50
           exit 1
+      # La API y la web consumen @bh/shared, @bh/fhir y @bh/ui desde su `dist`: hay que compilarlos antes.
+      - name: Compilar paquetes compartidos
+        run: pnpm turbo run build --filter='./packages/*'
+      # DATABASE_URL explícita: el cliente de Prisma se generó en `pnpm install`, antes de que existiera
+      # el .env, y no lo encuentra al sembrar. Coincide con el servicio postgres de este job.
       - name: Preparar API (migraciones y catálogos)
+        env:
+          DATABASE_URL: postgresql://businesshub:businesshub@localhost:5432/businesshub
         run: |
           cp .env.example apps/api/.env
           pnpm --filter @bh/api exec prisma migrate deploy
@@ -170,9 +177,17 @@ jobs:
           key: fhir-validator-${{ steps.v.outputs.ver }}-${{ steps.v.outputs.clcore }}
       - name: Descargar validador
         run: test -f validator_cli.jar || curl -fsSL -o validator_cli.jar "${{ steps.v.outputs.url }}"
+      # Bloqueante: estructura, cardinalidades e invariantes de FHIR R4 (sin servidor de terminología:
+      # tx.fhir.org es público e inestable y haría fallar el build por causas ajenas). El
+      # CapabilityStatement se valida en el paso informativo: su binding de MimeType exige terminología.
       - name: Validar contra FHIR R4 (bloqueante)
         run: |
-          java -jar validator_cli.jar packages/fhir/examples/*.json             -version 4.0.1 -level errors -no-extensible-binding-warnings             -output-style compact
+          ejemplos=$(ls packages/fhir/examples/*.json | grep -v CapabilityStatement)
+          java -jar validator_cli.jar $ejemplos -version 4.0.1 -level errors -no-extensible-binding-warnings -tx n/a -output-style compact
+      - name: Validar contra FHIR R4 con terminología (informativo)
+        continue-on-error: true
+        run: |
+          java -jar validator_cli.jar packages/fhir/examples/*.json -version 4.0.1 -level errors -no-extensible-binding-warnings -output-style compact
       - name: Validar contra CL Core (informativo)
         continue-on-error: true
         run: |

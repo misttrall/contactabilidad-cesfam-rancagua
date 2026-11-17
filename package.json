@@ -20,7 +20,7 @@
     "demo:down": "docker compose -f docker-compose.demo.yml down",
     "demo:reset": "docker compose -f docker-compose.demo.yml down -v",
     "demo:logs": "docker compose -f docker-compose.demo.yml logs -f",
-    "test:infra": "node --test infra/",
+    "test:infra": "node --test infra/despliegue/despliegue.test.mjs infra/keycloak/generar-realm.test.mjs",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,css,yml}\" --ignore-path .prettierignore"
   },
   "devDependencies": {

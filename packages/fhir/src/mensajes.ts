@@ -135,6 +135,8 @@ export interface FhirConsent {
   category: { coding: { system: string; code: string }[] }[];
   patient: { reference: string };
   dateTime: string;
+  /** FHIR exige `policy` o `policyRule` (ppc-1). */
+  policyRule: { text: string };
   provision: { type: 'deny'; purpose: { system: string; code: string }[] };
 }
 
@@ -156,6 +158,7 @@ export function bajaCanalAFhir(c: {
     category: [{ coding: [{ system: 'http://loinc.org', code: '59284-0' }] }],
     patient: { reference: `Patient/${c.pacienteId}` },
     dateTime: c.registradoEn.toISOString(),
+    policyRule: { text: 'Baja del canal WhatsApp solicitada por el titular (Ley 21.719)' },
     provision: {
       type: 'deny',
       purpose: [{ system: LOCAL_MEDIO_CONTACTO, code: 'whatsapp' }],

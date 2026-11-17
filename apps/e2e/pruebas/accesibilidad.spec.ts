@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { ingresar, USUARIOS } from './ayudas';
+import { ingresar, restablecerDemo, USUARIOS } from './ayudas';
 
 /** WCAG 2.2 AA (skill diseno-clinico-avis §5): cero violaciones en todas las pantallas. */
 const ETIQUETAS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'];
@@ -26,6 +26,15 @@ const PANTALLAS: { ruta: string; titulo: RegExp }[] = [
 ];
 
 test.describe('axe: accesibilidad', () => {
+  // En una base nueva (CI) los centros de las funcionarias (CSC, CSN) los crea «Restablecer datos demo»:
+  // sin ellos la funcionaria ve «Tu centro no existe en el sistema». Así el resultado no depende de corridas previas.
+  test.beforeAll(async ({ browser }) => {
+    const page = await browser.newPage({ baseURL: 'http://localhost:5173' });
+    await ingresar(page, USUARIOS.admin);
+    await restablecerDemo(page);
+    await page.close();
+  });
+
   test('pantalla de ingreso (portada y Keycloak)', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('button', { name: 'Ingresar con tu cuenta' })).toBeVisible();
